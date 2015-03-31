@@ -303,6 +303,7 @@ void Pctv::TransferGroups(ADDON_HANDLE handle)
     PVR_CHANNEL_GROUP tag;
     memset(&tag, 0, sizeof(PVR_CHANNEL_GROUP));
     tag.bIsRadio = false;
+    tag.iPosition = 0; // groups default order, unused
     strncpy(tag.strGroupName, group.strGroupName.c_str(), sizeof(tag.strGroupName));
     
     PVR->TransferChannelGroup(handle, &tag);
@@ -656,14 +657,31 @@ PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel
 			{
 				epg.iUniqueBroadcastId = GetEventId((long long)entry["Id"].asDouble());
 			}
-            epg.iChannelNumber = iChannelId;                        
-            epg.strTitle = entry["Title"].asCString();            
-			epg.strPlot = entry["ShortDescription"].asCString();            
-			epg.strPlotOutline = entry["LongDescription"].asCString();
+            epg.strTitle = entry["Title"].asCString();
+            epg.iChannelNumber = iChannelId;
             epg.startTime = static_cast<time_t>(entry["StartTime"].asDouble() / 1000);
             epg.endTime = static_cast<time_t>(entry["EndTime"].asDouble() / 1000);
-            epg.strEpisodeName = "";
-            epg.strIconPath = "";
+            epg.strPlotOutline = entry["LongDescription"].asCString();
+            epg.strPlot = entry["ShortDescription"].asCString();
+            epg.strOriginalTitle = NULL; // unused
+            epg.strCast = NULL; // unused
+            epg.strDirector = NULL; // unused
+            epg.strWriter = NULL; // unused
+            epg.iYear = 0; // unused
+            epg.strIMDBNumber = NULL; // unused
+            epg.strIconPath = ""; // unused
+            epg.iGenreType = 0; // unused
+            epg.iGenreSubType = 0; // unused
+            epg.strGenreDescription = "";
+            epg.firstAired = 0; // unused
+            epg.iParentalRating = 0; // unused
+            epg.iStarRating = 0; // unused
+            epg.bNotify = false;
+            epg.iSeriesNumber = 0; // unused
+            epg.iEpisodeNumber = 0; // unused
+            epg.iEpisodePartNumber = 0; // unused
+            epg.strEpisodeName = ""; // unused
+
         PVR->TransferEpgEntry(handle, &epg);
       }
     }
