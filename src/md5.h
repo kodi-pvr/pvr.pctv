@@ -24,7 +24,7 @@
 #include <string>
 #include <stdint.h>
 
-#include "kodi/util/StdString.h"
+#include "platform/util/StdString.h"
 
 struct MD5Context {
 	uint32_t buf[4];

@@ -1,10 +1,10 @@
 #pragma once
 
 //#include <vector>
-#include "kodi/util/StdString.h"
+#include "platform/util/StdString.h"
 #include "client.h"
 #include "rest.h"
-#include "kodi/threads/threads.h"
+#include "platform/threads/threads.h"
 //#include "tinyxml/tinyxml.h"
 #include <json/json.h>
 
