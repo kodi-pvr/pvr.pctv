@@ -466,6 +466,12 @@ PVR_ERROR GetRecordings(ADDON_HANDLE handle, bool deleted)
   return PctvData->GetRecordings(handle);
 }
 
+PVR_ERROR GetTimerTypes(PVR_TIMER_TYPE types[], int *size)
+{
+  /* TODO: Implement this to get support for the timer features introduced with PVR API 1.9.7 */
+  return PVR_ERROR_NOT_IMPLEMENTED;
+}
+
 int GetTimersAmount(void)
 {
   if (!PctvData || !PctvData->IsConnected())
@@ -479,6 +485,7 @@ PVR_ERROR GetTimers(ADDON_HANDLE handle)
   if (!PctvData || !PctvData->IsConnected())
     return PVR_ERROR_SERVER_ERROR;
 
+  /* TODO: Change implementation to get support for the timer features introduced with PVR API 1.9.7 */
   return PctvData->GetTimers(handle);
 }
 
@@ -533,7 +540,7 @@ PVR_ERROR UpdateTimer(const PVR_TIMER &timer) { return PVR_ERROR_NOT_IMPLEMENTED
 PVR_ERROR SetRecordingLastPlayedPosition(const PVR_RECORDING &recording, int lastplayedposition) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DeleteRecording(const PVR_RECORDING &recording) { return PVR_ERROR_NOT_IMPLEMENTED; }
-PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForceDelete)  { return PVR_ERROR_NOT_IMPLEMENTED; }
+PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForceDelete, bool bDeleteScheduled)  { return PVR_ERROR_NOT_IMPLEMENTED; }
 int GetRecordingLastPlayedPosition(const PVR_RECORDING &recording) { return PVR_ERROR_NOT_IMPLEMENTED; }
 bool OpenRecordedStream(const PVR_RECORDING &recording) { return false; }
 void CloseRecordedStream(void) {}
