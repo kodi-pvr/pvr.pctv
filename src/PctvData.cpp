@@ -526,6 +526,10 @@ void Pctv::TransferTimer(ADDON_HANDLE handle)
     PctvTimer &timer = m_timer.at(i);
     PVR_TIMER tag;
     memset(&tag, 0, sizeof(PVR_TIMER));
+
+    /* TODO: Implement own timer types to get support for the timer features introduced with PVR API 1.9.7 */
+    tag.iTimerType = PVR_TIMER_TYPE_NONE;
+
     tag.iClientIndex = timer.iId;
     tag.iClientChannelUid = timer.iChannelId;
     strncpy(tag.strTitle, timer.strTitle.c_str(), sizeof(tag.strTitle));
@@ -535,7 +539,6 @@ void Pctv::TransferTimer(ADDON_HANDLE handle)
     tag.strDirectory[0] = '\0';
     tag.iPriority = 0;
     tag.iLifetime = 0;
-    tag.bIsRepeating = false;
     tag.iEpgUid = 0;
 
     PVR->TransferTimerEntry(handle, &tag);
