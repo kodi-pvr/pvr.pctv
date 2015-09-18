@@ -652,38 +652,33 @@ PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel
       {
         Json::Value entry = entries[i];
         memset(&epg, 0, sizeof(EPG_TAG));
-	      if (IsSupported("broadway"))
-        {
-				epg.iUniqueBroadcastId = entry["Id"].asUInt();
-			}
-			else 
-			{
-				epg.iUniqueBroadcastId = GetEventId((long long)entry["Id"].asDouble());
-			}
-            epg.strTitle = entry["Title"].asCString();
-            epg.iChannelNumber = iChannelId;
-            epg.startTime = static_cast<time_t>(entry["StartTime"].asDouble() / 1000);
-            epg.endTime = static_cast<time_t>(entry["EndTime"].asDouble() / 1000);
-            epg.strPlotOutline = entry["LongDescription"].asCString();
-            epg.strPlot = entry["ShortDescription"].asCString();
-            epg.strOriginalTitle = NULL; // unused
-            epg.strCast = NULL; // unused
-            epg.strDirector = NULL; // unused
-            epg.strWriter = NULL; // unused
-            epg.iYear = 0; // unused
-            epg.strIMDBNumber = NULL; // unused
-            epg.strIconPath = ""; // unused
-            epg.iGenreType = 0; // unused
-            epg.iGenreSubType = 0; // unused
-            epg.strGenreDescription = "";
-            epg.firstAired = 0; // unused
-            epg.iParentalRating = 0; // unused
-            epg.iStarRating = 0; // unused
-            epg.bNotify = false;
-            epg.iSeriesNumber = 0; // unused
-            epg.iEpisodeNumber = 0; // unused
-            epg.iEpisodePartNumber = 0; // unused
-            epg.strEpisodeName = ""; // unused
+
+        epg.iUniqueBroadcastId = IsSupported("broadway") ? entry["Id"].asUInt() : GetEventId((long long)entry["Id"].asDouble());
+        epg.strTitle = entry["Title"].asCString();
+        epg.iChannelNumber = iChannelId;
+        epg.startTime = static_cast<time_t>(entry["StartTime"].asDouble() / 1000);
+        epg.endTime = static_cast<time_t>(entry["EndTime"].asDouble() / 1000);
+        epg.strPlotOutline = entry["LongDescription"].asCString();
+        epg.strPlot = entry["ShortDescription"].asCString();
+        epg.strOriginalTitle = NULL; // unused
+        epg.strCast = NULL; // unused
+        epg.strDirector = NULL; // unused
+        epg.strWriter = NULL; // unused
+        epg.iYear = 0; // unused
+        epg.strIMDBNumber = NULL; // unused
+        epg.strIconPath = ""; // unused
+        epg.iGenreType = 0; // unused
+        epg.iGenreSubType = 0; // unused
+        epg.strGenreDescription = "";
+        epg.firstAired = 0; // unused
+        epg.iParentalRating = 0; // unused
+        epg.iStarRating = 0; // unused
+        epg.bNotify = false;
+        epg.iSeriesNumber = 0; // unused
+        epg.iEpisodeNumber = 0; // unused
+        epg.iEpisodePartNumber = 0; // unused
+        epg.strEpisodeName = ""; // unused
+        epg.iFlags = EPG_TAG_FLAG_UNDEFINED;
 
         PVR->TransferEpgEntry(handle, &epg);
       }
