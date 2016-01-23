@@ -89,7 +89,7 @@ int cRest::Post(const std::string& command, const std::string& arguments, Json::
 
 int httpRequest(const std::string& command, const std::string& arguments, const bool write, std::string& json_response)
 {
-	//PLATFORM::CLockObject critsec(communication_mutex);		
+	//P8PLATFORM::CLockObject critsec(communication_mutex);		
 	std::string strUrl = command;
 	
 	if (write) {	// POST http request

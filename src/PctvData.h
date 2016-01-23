@@ -1,10 +1,10 @@
 #pragma once
 
 //#include <vector>
-#include "platform/util/StdString.h"
+#include "p8-platform/util/StdString.h"
 #include "client.h"
 #include "rest.h"
-#include "platform/threads/threads.h"
+#include "p8-platform/threads/threads.h"
 //#include "tinyxml/tinyxml.h"
 #include <json/json.h>
 
@@ -134,7 +134,7 @@ struct PctvConfig
 	}
 };
 
-class Pctv : public PLATFORM::CThread
+class Pctv : public P8PLATFORM::CThread
 {
 public:
   /* Class interface */
@@ -223,8 +223,8 @@ private:
   void *Process(void);
     
   // members
-  PLATFORM::CMutex                  m_mutex;
-  PLATFORM::CCondition<bool>        m_started;
+  P8PLATFORM::CMutex                  m_mutex;
+  P8PLATFORM::CCondition<bool>        m_started;
 
   bool                              m_bIsConnected;  
   std::string                       m_strHostname;
