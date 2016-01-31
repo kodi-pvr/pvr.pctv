@@ -1,0 +1,23 @@
+# build artifacts
+build/
+debian/changelog
+debian/files
+debian/kodi-pvr-pctv-dbg.debhelper.log
+debian/kodi-pvr-pctv-dbg.substvars
+debian/kodi-pvr-pctv-dbg/
+debian/kodi-pvr-pctv.debhelper.log
+debian/kodi-pvr-pctv.postinst.debhelper
+debian/kodi-pvr-pctv.postrm.debhelper
+debian/kodi-pvr-pctv.substvars
+debian/kodi-pvr-pctv/
+debian/tmp/
+obj-x86_64-linux-gnu/
+pvr.pctv/addon.xml
+
+# clion
+.idea/
+
+# Eclipse/CDT
+.cproject
+.project
+.settings/
