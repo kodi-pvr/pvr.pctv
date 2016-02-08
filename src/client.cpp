@@ -436,11 +436,6 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
   return OpenLiveStream(channel);
 }
 
-int GetCurrentClientChannel(void)
-{
-  return m_currentChannel.iUniqueId;
-}
-
 PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
 {
   if (!PctvData || !PctvData->IsConnected())
