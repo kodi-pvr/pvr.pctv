@@ -154,7 +154,6 @@ public:
   unsigned int GetChannelsAmount(void);
   bool GetChannel(const PVR_CHANNEL &channel, PctvChannel &myChannel);
   PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio);  
-  int GetCurrentClientChannel(void);  
 
   /* Groups */
   unsigned int GetChannelGroupsAmount(void);  
