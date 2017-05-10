@@ -4,10 +4,7 @@
   version="2.0.1"
   name="PCTV Systems Client"
   provider-name="PCTV Systems">
-  <requires>
-    <c-pluff version="0.1"/>
-    <import addon="xbmc.pvr" version="5.2.2"/>
-  </requires>
+  <requires>@ADDON_DEPENDS@</requires>
   <extension
     point="xbmc.pvrclient"
     library_@PLATFORM@="@LIBRARY_FILENAME@"/>
