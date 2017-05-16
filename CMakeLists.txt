@@ -24,6 +24,11 @@ set(PCTV_SOURCES src/client.cpp
                  src/PctvData.cpp
                  src/rest.cpp)
 
+set(PCTV_HEADERS src/client.h
+                 src/md5.h
+                 src/PctvData.h
+                 src/rest.h)
+
 build_addon(pvr.pctv PCTV DEPLIBS)
 
 include(CPack)
