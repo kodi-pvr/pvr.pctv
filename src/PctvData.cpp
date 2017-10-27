@@ -217,7 +217,6 @@ void Pctv::TransferChannels(ADDON_HANDLE handle)
 	tag.iEncryptionSystem = channel.iEncryptionSystem;	
     strncpy(tag.strChannelName, channel.strChannelName.c_str(), sizeof(tag.strChannelName));
     strncpy(tag.strInputFormat, m_strPreviewMode.c_str(), sizeof(tag.strInputFormat));
-    strncpy(tag.strStreamURL, channel.strStreamURL.c_str(), sizeof(tag.strStreamURL));
     strncpy(tag.strIconPath, channel.strLogoPath.c_str(), sizeof(tag.strIconPath));
     PVR->TransferChannelEntry(handle, &tag);
   }
@@ -229,6 +228,28 @@ bool Pctv::LoadChannels()
   PVR->TriggerChannelGroupsUpdate();
   PVR->TriggerChannelUpdate();
   return true;  
+}
+
+PVR_ERROR Pctv::GetChannelStreamProperties(const PVR_CHANNEL* channel, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount)
+{
+  std:string strUrl;
+  for (const auto& pctvChannel : m_channels)
+  {
+    if (pctvChannel.iUniqueId == channel->iUniqueId)
+    {
+      strUrl = pctvChannel.strStreamURL;
+    }
+  }
+
+  if (strUrl.empty()) {
+    return PVR_ERROR_FAILED;
+  }
+  strncpy(properties[0].strName, PVR_STREAM_PROPERTY_STREAMURL, sizeof(properties[0].strName));
+  strncpy(properties[0].strValue, strUrl.c_str(), sizeof(properties[0].strValue));
+
+  *iPropertiesCount = 1;
+
+  return PVR_ERROR_NO_ERROR;
 }
 
 /************************************************************/
@@ -412,7 +433,6 @@ void Pctv::TransferRecordings(ADDON_HANDLE handle)
     memset(&tag, 0, sizeof(PVR_RECORDING));
     strncpy(tag.strRecordingId, recording.strRecordingId.c_str(), sizeof(tag.strRecordingId) -1);
     strncpy(tag.strTitle, recording.strTitle.c_str(), sizeof(tag.strTitle) -1);
-    strncpy(tag.strStreamURL, recording.strStreamURL.c_str(), sizeof(tag.strStreamURL) -1);
     strncpy(tag.strPlotOutline, recording.strPlotOutline.c_str(), sizeof(tag.strPlotOutline) -1);
     strncpy(tag.strPlot, recording.strPlot.c_str(), sizeof(tag.strPlot) -1);
     strncpy(tag.strChannelName, recording.strChannelName.c_str(), sizeof(tag.strChannelName) -1);
@@ -459,6 +479,26 @@ int Pctv::RESTGetRecordings(Json::Value& response)
 
 unsigned int Pctv::GetRecordingsAmount() {
   return m_iNumRecordings;
+}
+
+PVR_ERROR Pctv::GetRecordingStreamProperties(const PVR_RECORDING* recording, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount)
+{
+  std:string strRecordingFile;
+  for (const auto& PctvRec : m_recordings)
+  {
+    if (strcmp(PctvRec.strRecordingId.c_str(), recording->strRecordingId)== 0)
+    {
+      strRecordingFile = PctvRec.strStreamURL;
+    }
+  }
+
+  if (strRecordingFile.empty())
+    return PVR_ERROR_SERVER_ERROR;
+
+  strncpy(properties[0].strName, PVR_STREAM_PROPERTY_STREAMURL, sizeof(properties[0].strName) - 1);
+  strncpy(properties[0].strValue, strRecordingFile.c_str(), sizeof(properties[0].strValue) - 1);
+  *iPropertiesCount = 1;
+  return PVR_ERROR_NO_ERROR;
 }
 
 /************************************************************/
@@ -661,7 +701,7 @@ PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel
 
         epg.iUniqueBroadcastId = IsSupported("broadway") ? entry["Id"].asUInt() : GetEventId((long long)entry["Id"].asDouble());
         epg.strTitle = entry["Title"].asCString();
-        epg.iChannelNumber = iChannelId;
+        epg.iUniqueChannelId = iChannelId;
         epg.startTime = static_cast<time_t>(entry["StartTime"].asDouble() / 1000);
         epg.endTime = static_cast<time_t>(entry["EndTime"].asDouble() / 1000);
         epg.strPlotOutline = entry["LongDescription"].asCString();

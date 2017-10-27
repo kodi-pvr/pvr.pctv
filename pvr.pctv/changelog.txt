@@ -1,3 +1,8 @@
+2.2.0
+- Updated to PVR addon API v5.7.0
+- bumped jsoncpp to 0.10.6
+- changed jsoncpp deprecated method to new method getFormattedErrorMessages
+
 2.1.0
 - Updated to PVR addon API v5.3.0
 
