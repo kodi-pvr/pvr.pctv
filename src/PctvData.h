@@ -153,7 +153,8 @@ public:
   /* Channels */
   unsigned int GetChannelsAmount(void);
   bool GetChannel(const PVR_CHANNEL &channel, PctvChannel &myChannel);
-  PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio);  
+  PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio);
+  PVR_ERROR GetChannelStreamProperties(const PVR_CHANNEL* channel, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount);
 
   /* Groups */
   unsigned int GetChannelGroupsAmount(void);  
@@ -164,7 +165,8 @@ public:
   PVR_ERROR GetRecordings(ADDON_HANDLE handle);
   bool GetRecordingFromLocation(CStdString strRecordingFolder);
   unsigned int GetRecordingsAmount(void);
-  
+  PVR_ERROR GetRecordingStreamProperties(const PVR_RECORDING* recording, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount);
+
   /* Timer */
   unsigned int GetTimersAmount(void);
   PVR_ERROR GetTimers(ADDON_HANDLE handle);

@@ -41,7 +41,7 @@ int cRest::Get(const std::string& command, const std::string& arguments, Json::V
 			{
 				XBMC->Log(LOG_DEBUG, "Failed to parse %s: \n%s\n",
 					response.c_str(),
-					reader.getFormatedErrorMessages().c_str());
+					reader.getFormattedErrorMessages().c_str());
 				return E_FAILED;
 			}
 		}
@@ -73,7 +73,7 @@ int cRest::Post(const std::string& command, const std::string& arguments, Json::
 			{
 				XBMC->Log(LOG_DEBUG, "Failed to parse %s: \n%s\n",
 					response.c_str(),
-					reader.getFormatedErrorMessages().c_str());
+					reader.getFormattedErrorMessages().c_str());
 				return E_FAILED;
 			}
 		}
