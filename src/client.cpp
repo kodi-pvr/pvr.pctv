@@ -27,6 +27,10 @@
 #include "p8-platform/util/util.h"
 #include <p8-platform/util/StringUtils.h>
 
+#if defined(TARGET_WINDOWS) && defined(CreateDirectory)
+#undef CreateDirectory
+#endif
+
 using namespace std;
 using namespace ADDON;
 
@@ -172,11 +176,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   if (!XBMC->DirectoryExists(g_strUserPath.c_str()))
   {
-#ifdef TARGET_WINDOWS
-    CreateDirectory(g_strUserPath.c_str(), NULL);
-#else
     XBMC->CreateDirectory(g_strUserPath.c_str());
-#endif
   }
   
   ADDON_ReadSettings();
