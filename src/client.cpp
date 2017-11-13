@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include "PctvData.h"
 #include "p8-platform/util/util.h"
+#include <p8-platform/util/StringUtils.h>
 
 using namespace std;
 using namespace ADDON;
@@ -346,12 +347,12 @@ const char *GetBackendHostname(void)
 
 const char *GetConnectionString(void)
 {
-  //static CStdString strConnectionString = "connected";
-  static CStdString strConnectionString;
+  //static std::string strConnectionString = "connected";
+  static std::string strConnectionString;
   if (PctvData)
-    strConnectionString.Format("%s%s", g_strHostname.c_str(), PctvData->IsConnected() ? "" : " (Not connected!)");
+    strConnectionString= StringUtils::Format("%s%s", g_strHostname.c_str(), PctvData->IsConnected() ? "" : " (Not connected!)");
   else
-    strConnectionString.Format("%s (addon error!)", g_strHostname.c_str());
+    strConnectionString= StringUtils::Format("%s (addon error!)", g_strHostname.c_str());
   return strConnectionString.c_str();
 }
 
