@@ -1,3 +1,6 @@
+2.2.2
+- Remove StdString usage
+
 2.2.0
 - Updated to PVR addon API v5.7.0
 - bumped jsoncpp to 0.10.6

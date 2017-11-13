@@ -25,6 +25,11 @@
 #include <stdlib.h>
 #include "PctvData.h"
 #include "p8-platform/util/util.h"
+#include <p8-platform/util/StringUtils.h>
+
+#if defined(TARGET_WINDOWS) && defined(CreateDirectory)
+#undef CreateDirectory
+#endif
 
 using namespace std;
 using namespace ADDON;
@@ -171,11 +176,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   if (!XBMC->DirectoryExists(g_strUserPath.c_str()))
   {
-#ifdef TARGET_WINDOWS
-    CreateDirectory(g_strUserPath.c_str(), NULL);
-#else
     XBMC->CreateDirectory(g_strUserPath.c_str());
-#endif
   }
   
   ADDON_ReadSettings();
@@ -346,12 +347,12 @@ const char *GetBackendHostname(void)
 
 const char *GetConnectionString(void)
 {
-  //static CStdString strConnectionString = "connected";
-  static CStdString strConnectionString;
+  //static std::string strConnectionString = "connected";
+  static std::string strConnectionString;
   if (PctvData)
-    strConnectionString.Format("%s%s", g_strHostname.c_str(), PctvData->IsConnected() ? "" : " (Not connected!)");
+    strConnectionString= StringUtils::Format("%s%s", g_strHostname.c_str(), PctvData->IsConnected() ? "" : " (Not connected!)");
   else
-    strConnectionString.Format("%s (addon error!)", g_strHostname.c_str());
+    strConnectionString= StringUtils::Format("%s (addon error!)", g_strHostname.c_str());
   return strConnectionString.c_str();
 }
 

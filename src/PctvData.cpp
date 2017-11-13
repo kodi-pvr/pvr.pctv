@@ -1,5 +1,10 @@
 #include "PctvData.h"
+
 #include "client.h"
+
+#include <p8-platform/util/StringUtils.h>
+
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -46,7 +51,7 @@ Pctv::Pctv() :m_strBaseUrl(""), m_strStid(""), m_strPreviewMode(DEFAULT_PREVIEW_
   m_bTranscode = g_bTranscode;
   m_bUsePIN = g_bUsePIN;
   m_iPortWeb = g_iPortWeb;     
-  m_strBackendUrlNoAuth.Format("http://%s:%u", g_strHostname.c_str(), m_iPortWeb);
+  m_strBackendUrlNoAuth= StringUtils::Format("http://%s:%u", g_strHostname.c_str(), m_iPortWeb);
 }
 
 void  *Pctv::Process()
@@ -93,14 +98,14 @@ bool Pctv::Open()
   }
  
   // add user:pin in front of the URL if PIN is set  
-  CStdString strURL = "";
+  std::string strURL = "";
   std::string strAuth = "";
   if (m_bUsePIN)
   {
-	  CStdString pinMD5 = XBMCPVR::XBMC_MD5::GetMD5(g_strPin);
-	  pinMD5.ToLower();
+	  std::string pinMD5 = XBMCPVR::XBMC_MD5::GetMD5(g_strPin);
+	  StringUtils::ToLower(pinMD5);
 
-	  strURL.Format("User:%s@", pinMD5.c_str());
+	  strURL= StringUtils::Format("User:%s@", pinMD5.c_str());
 
 	  if (IsSupported("broadway"))
 	  {
@@ -108,7 +113,7 @@ bool Pctv::Open()
 	  }
   }
 
-  strURL.Format("http://%s%s:%u%s", strURL.c_str(), g_strHostname.c_str(), m_iPortWeb, strAuth);
+  strURL= StringUtils::Format("http://%s%s:%u%s", strURL.c_str(), g_strHostname.c_str(), m_iPortWeb, strAuth.c_str());
   m_strBaseUrl = strURL;
 
   // request index.html to force wake-up from standby
@@ -181,7 +186,7 @@ PVR_ERROR Pctv::GetChannels(ADDON_HANDLE handle, bool bRadio)
 		channel.iSubChannelNumber = 0;
 	}
 	channel.iEncryptionSystem = 0;	
-    CStdString params;    
+    std::string params;
     params = GetPreviewParams(handle, entry);
     channel.strStreamURL = GetPreviewUrl(params);    
     channel.strLogoPath = GetChannelLogo(entry);
@@ -207,7 +212,7 @@ void Pctv::TransferChannels(ADDON_HANDLE handle)
 {
   for (unsigned int i = 0; i < m_channels.size(); i++)
   {
-    CStdString strTmp;
+    std::string strTmp;
     PctvChannel &channel = m_channels.at(i);
     PVR_CHANNEL tag;
     memset(&tag, 0, sizeof(PVR_CHANNEL));
@@ -318,7 +323,7 @@ void Pctv::TransferGroups(ADDON_HANDLE handle)
 {
   for (unsigned int i = 0; i<m_groups.size(); i++)
   {
-    CStdString strTmp;
+    std::string strTmp;
     PctvChannelGroup &group = m_groups.at(i);
   
     PVR_CHANNEL_GROUP tag;
@@ -333,7 +338,7 @@ void Pctv::TransferGroups(ADDON_HANDLE handle)
 
 PVR_ERROR Pctv::GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &group)
 {
-  CStdString strTmp = group.strGroupName;
+  std::string strTmp = group.strGroupName;
   for (unsigned int i = 0; i < m_groups.size(); i++)
   {
     PctvChannelGroup &g = m_groups.at(i);
@@ -408,7 +413,7 @@ PVR_ERROR Pctv::GetRecordings(ADDON_HANDLE handle)
 		recording.iDuration = static_cast<time_t>(entry["Duration"].asDouble() / 1000); // in seconds
 		recording.iLastPlayedPosition = static_cast<int>(entry["Resume"].asDouble() / 1000); // in seconds
 		
-		CStdString params = GetPreviewParams(handle, entry);
+		std::string params = GetPreviewParams(handle, entry);
 		recording.strStreamURL = GetPreviewUrl(params);
 		m_iNumRecordings++;
 		m_recordings.push_back(recording);
@@ -534,7 +539,7 @@ PVR_ERROR Pctv::GetTimers(ADDON_HANDLE handle)
     timer.iStartOffset = entry["StartOffset"].asInt();
     timer.iEndOffset = entry["EndOffset"].asInt();      
     
-    CStdString strState = entry["State"].asString();        
+    std::string strState = entry["State"].asString();
     if (strState == "Idle" || strState == "Prepared")
     {
       timer.state = PVR_TIMER_STATE_SCHEDULED;
@@ -568,7 +573,7 @@ void Pctv::TransferTimer(ADDON_HANDLE handle)
 {
   for (unsigned int i = 0; i<m_timer.size(); i++)
   {
-    CStdString strTmp;
+    std::string strTmp;
     PctvTimer &timer = m_timer.at(i);
     PVR_TIMER tag;
     memset(&tag, 0, sizeof(PVR_TIMER));
@@ -620,8 +625,8 @@ int Pctv::RESTGetTimer(Json::Value& response)
 
 int Pctv::RESTAddTimer(const PVR_TIMER &timer, Json::Value& response)
 {	
-  CStdString strQueryString;
-  strQueryString.Format("{\"Id\":0,\"ChannelId\":%i,\"State\":\"%s\",\"RealStartTime\":%llu,\"RealEndTime\":%llu,\"StartOffset\":%llu,\"EndOffset\":%llu,\"DisplayName\":\"%s\",\"Recurrence\":%i,\"ChannelListId\":%i,\"Profile\":\"%s\"}",
+  std::string strQueryString;
+  strQueryString= StringUtils::Format("{\"Id\":0,\"ChannelId\":%i,\"State\":\"%s\",\"RealStartTime\":%llu,\"RealEndTime\":%llu,\"StartOffset\":%llu,\"EndOffset\":%llu,\"DisplayName\":\"%s\",\"Recurrence\":%i,\"ChannelListId\":%i,\"Profile\":\"%s\"}",
 	  timer.iClientChannelUid, "Idle", static_cast<unsigned long long>(timer.startTime) * 1000, static_cast<unsigned long long>(timer.endTime) * 1000, static_cast<unsigned long long>(timer.iMarginStart) * 1000, static_cast<unsigned long long>(timer.iMarginEnd) * 1000, timer.strTitle, 0, 0, DEFAULT_REC_PROFILE);
 
   cRest rest;
@@ -757,9 +762,9 @@ bool Pctv::GetEPG(int id, time_t iStart, time_t iEnd, Json::Value& data)
 
 int Pctv::RESTGetEpg(int id, time_t iStart, time_t iEnd, Json::Value& response)
 {
-  CStdString strParams;
-  //strParams.Format("?ids=%d&extended=1&start=%d&end=%d", id, iStart * 1000, iEnd * 1000);
-  strParams.Format("?ids=%d&extended=1&start=%llu&end=%llu", id, static_cast<unsigned long long>(iStart) * 1000, static_cast<unsigned long long>(iEnd) * 1000);  
+  std::string strParams;
+  //strParams= StringUtils::Format("?ids=%d&extended=1&start=%d&end=%d", id, iStart * 1000, iEnd * 1000);
+  strParams= StringUtils::Format("?ids=%d&extended=1&start=%llu&end=%llu", id, static_cast<unsigned long long>(iStart) * 1000, static_cast<unsigned long long>(iEnd) * 1000);
   
   cRest rest;
   std::string strUrl = m_strBaseUrl + URI_REST_EPG;
@@ -785,69 +790,69 @@ int Pctv::RESTGetEpg(int id, time_t iStart, time_t iEnd, Json::Value& response)
 }
 
 
-CStdString Pctv::GetPreviewParams(ADDON_HANDLE handle, Json::Value entry) 
+std::string Pctv::GetPreviewParams(ADDON_HANDLE handle, Json::Value entry)
 { 
-  CStdString strStid = GetStid(handle->dataIdentifier);
-  CStdString strTmp;  
+  std::string strStid = GetStid(handle->dataIdentifier);
+  std::string strTmp;
   if (entry["File"].isString())
   {  // Gallery entry
-    strTmp.Format("stid=%s&galleryid=%.0f&file=%s&profile=%s", strStid, entry["Id"].asDouble(), URLEncodeInline(entry["File"].asString()), GetTranscodeProfileValue());
+    strTmp= StringUtils::Format("stid=%s&galleryid=%.0f&file=%s&profile=%s", strStid.c_str(), entry["Id"].asDouble(), URLEncodeInline(entry["File"].asString()).c_str(), GetTranscodeProfileValue().c_str());
     return strTmp;
   }  
   
   // channel entry
-  strTmp.Format("channel=%i&mode=%s&profile=%s&stid=%s", entry["Id"].asInt(), m_strPreviewMode, GetTranscodeProfileValue(), strStid);
+  strTmp= StringUtils::Format("channel=%i&mode=%s&profile=%s&stid=%s", entry["Id"].asInt(), m_strPreviewMode.c_str(), GetTranscodeProfileValue().c_str(), strStid.c_str());
   return strTmp;
   
 }
 
-CStdString Pctv::GetTranscodeProfileValue()
+std::string Pctv::GetTranscodeProfileValue()
 {
-  CStdString strProfile;
+  std::string strProfile;
   if (!m_bTranscode)
   {
-    strProfile.Format("%s.Native.NR", m_strPreviewMode);
+    strProfile= StringUtils::Format("%s.Native.NR", m_strPreviewMode.c_str());
   }
   else
   {
-    strProfile.Format("%s.%ik.HR", m_strPreviewMode, m_iBitrate);
+    strProfile= StringUtils::Format("%s.%ik.HR", m_strPreviewMode.c_str(), m_iBitrate);
   }
 
   return strProfile;
 }
 
-CStdString Pctv::GetPreviewUrl(CStdString params) 
+std::string Pctv::GetPreviewUrl(std::string params)
 {
-  CStdString strTmp;
-  strTmp.Format("%s/TVC/Preview?%s", m_strBaseUrl.c_str(), params);
+  std::string strTmp;
+  strTmp= StringUtils::Format("%s/TVC/Preview?%s", m_strBaseUrl.c_str(), params.c_str());
   return strTmp;
 }
 
-CStdString Pctv::GetStid(int defaultStid)
+std::string Pctv::GetStid(int defaultStid)
 { 
   if (m_strStid == "")
   {    
-    m_strStid.Format("_xbmc%i", defaultStid);
+    m_strStid= StringUtils::Format("_xbmc%i", defaultStid);
   }
     
   return m_strStid;
 }
 
-CStdString Pctv::GetChannelLogo(Json::Value entry)
+std::string Pctv::GetChannelLogo(Json::Value entry)
 {
-  CStdString strNameParam;
-  strNameParam.Format("%s/TVC/Resource?type=1&default=emptyChannelLogo&name=%s", m_strBaseUrl.c_str(), URLEncodeInline(GetShortName(entry)));
+  std::string strNameParam;
+  strNameParam= StringUtils::Format("%s/TVC/Resource?type=1&default=emptyChannelLogo&name=%s", m_strBaseUrl.c_str(), URLEncodeInline(GetShortName(entry)).c_str());
   return strNameParam;
 }
 
-CStdString Pctv::GetShortName(Json::Value entry)
+std::string Pctv::GetShortName(Json::Value entry)
 {
-  CStdString strShortName;
+  std::string strShortName;
   if (entry["shortName"].isNull()) 
   {
     strShortName = entry["DisplayName"].asString();
     if (strShortName == "") { strShortName = entry["Name"].asString(); }
-    strShortName.Replace(" ", "_");
+    StringUtils::Replace(strShortName, " ", "_");
   }
   
   return strShortName;
@@ -860,7 +865,7 @@ bool Pctv::IsConnected()
 
 bool Pctv::GetFreeConfig()
 {  	
-  CStdString strConfig = "";
+  std::string strConfig = "";
 
   cRest rest;
   Json::Value response;
@@ -916,7 +921,7 @@ unsigned int Pctv::GetChannelsAmount()
 
 
 
-bool Pctv::IsRecordFolderSet(CStdString& partitionId)
+bool Pctv::IsRecordFolderSet(std::string& partitionId)
 {
 	Json::Value data;
 	int retval = RESTGetFolder(data); // get folder config
@@ -992,7 +997,7 @@ int Pctv::RESTGetStorage(Json::Value& response)
 PVR_ERROR Pctv::GetStorageInfo(long long *total, long long *used)
 {
 	m_partitions.clear();
-	CStdString strPartitionId = "";
+	std::string strPartitionId = "";
 	
 	bool isRecordFolder = IsRecordFolderSet(strPartitionId);
 	
@@ -1019,8 +1024,8 @@ PVR_ERROR Pctv::GetStorageInfo(long long *total, long long *used)
 					Json::Value partition;
 					partition = devicePartitions[p];
 
-					CStdString strDevicePartitionId;
-					strDevicePartitionId.Format("%s.%s", deviceId, partition["Id"].asString());
+					std::string strDevicePartitionId;
+					strDevicePartitionId= StringUtils::Format("%s.%s", deviceId.c_str(), partition["Id"].asString().c_str());
 
 					if (strDevicePartitionId == strPartitionId)
           {
@@ -1165,7 +1170,7 @@ const char SAFE[256] =
 };
 
 
-CStdString Pctv::URLEncodeInline(const CStdString& sSrc)
+std::string Pctv::URLEncodeInline(const std::string& sSrc)
 {
   const char DEC2HEX[16 + 1] = "0123456789ABCDEF";
   const unsigned char * pSrc = (const unsigned char *)sSrc.c_str();

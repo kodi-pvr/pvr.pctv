@@ -1,7 +1,6 @@
 #pragma once
 
 //#include <vector>
-#include "p8-platform/util/StdString.h"
 #include "client.h"
 #include "rest.h"
 #include "p8-platform/threads/threads.h"
@@ -126,7 +125,7 @@ struct PctvConfig
 	
 	bool hasCapability(const std::string& cap)
 	{
-		CStdString caps = ";" + Caps + ";";
+		std::string caps = ";" + Caps + ";";
 		if (caps.find(";" + cap + ";") != std::string::npos) {
 			return true;
 		}
@@ -163,7 +162,7 @@ public:
 
   /* Recordings */
   PVR_ERROR GetRecordings(ADDON_HANDLE handle);
-  bool GetRecordingFromLocation(CStdString strRecordingFolder);
+  bool GetRecordingFromLocation(std::string strRecordingFolder);
   unsigned int GetRecordingsAmount(void);
   PVR_ERROR GetRecordingStreamProperties(const PVR_RECORDING* recording, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount);
 
@@ -207,19 +206,19 @@ private:
   int RESTAddTimer(const PVR_TIMER &timer, Json::Value& response);  
 
   // helper functions    
-  CStdString URLEncodeInline(const CStdString& sSrc);  
+  std::string URLEncodeInline(const std::string& sSrc);
   void TransferChannels(ADDON_HANDLE handle);
   void TransferRecordings(ADDON_HANDLE handle);
   void TransferTimer(ADDON_HANDLE handle); 
   void TransferGroups(ADDON_HANDLE handle);  
   bool replace(std::string& str, const std::string& from, const std::string& to);
-  bool IsRecordFolderSet(CStdString& partitionId);
-  CStdString GetPreviewParams(ADDON_HANDLE handle, Json::Value entry);
-  CStdString GetPreviewUrl(CStdString params);
-  CStdString GetTranscodeProfileValue();
-  CStdString GetStid(int id);
-  CStdString GetChannelLogo(Json::Value entry);
-  CStdString GetShortName(Json::Value entry);
+  bool IsRecordFolderSet(std::string& partitionId);
+  std::string GetPreviewParams(ADDON_HANDLE handle, Json::Value entry);
+  std::string GetPreviewUrl(std::string params);
+  std::string GetTranscodeProfileValue();
+  std::string GetStid(int id);
+  std::string GetChannelLogo(Json::Value entry);
+  std::string GetShortName(Json::Value entry);
   
   void *Process(void);
     
@@ -241,9 +240,9 @@ private:
   int                               m_iNumRecordings;  
   int                               m_iNumGroups;  
   std::string                       m_strPreviewMode;
-  CStdString                        m_strStid;  
+  std::string                       m_strStid;
   bool                              m_bUpdating;  
-  CStdString                        m_strBackendUrlNoAuth;
+  std::string                       m_strBackendUrlNoAuth;
   
   std::vector<PctvEpgChannel>       m_epg;    
   std::vector<PctvChannel>          m_channels;  

@@ -20,6 +20,8 @@
 
 #include "md5.h"
 
+#include <p8-platform/util/StringUtils.h>
+
 typedef unsigned char md5byte;
 
 static void MD5Init(struct MD5Context *context);
@@ -51,11 +53,11 @@ void XBMCPVR::XBMC_MD5::getDigest(unsigned char digest[16])
   MD5Final(digest, &m_ctx);
 }
 
-void XBMCPVR::XBMC_MD5::getDigest(CStdString& digest)
+void XBMCPVR::XBMC_MD5::getDigest(std::string& digest)
 {
   unsigned char szBuf[16] = {'\0'};
   getDigest(szBuf);
-  digest.Format("%02X%02X%02X%02X%02X%02X%02X%02X"\
+  digest = StringUtils::Format("%02X%02X%02X%02X%02X%02X%02X%02X"\
                              "%02X%02X%02X%02X%02X%02X%02X%02X",
                              szBuf[0], szBuf[1], szBuf[2],
                              szBuf[3], szBuf[4], szBuf[5], szBuf[6], szBuf[7], szBuf[8],
@@ -63,12 +65,12 @@ void XBMCPVR::XBMC_MD5::getDigest(CStdString& digest)
                              szBuf[15]);
 }
 
-CStdString XBMCPVR::XBMC_MD5::GetMD5(const CStdString &text)
+std::string XBMCPVR::XBMC_MD5::GetMD5(const std::string &text)
 {
   if (text.empty())
     return "";
   XBMC_MD5 state;
-  CStdString digest;
+  std::string digest;
   state.append(text);
   state.getDigest(digest);
   return digest;
