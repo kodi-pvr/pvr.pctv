@@ -17,6 +17,7 @@
 *
 */
 #include "rest.h"
+#include <memory>
 #include <vector>
 #include <stdlib.h>
 #include <string.h>
@@ -33,15 +34,15 @@ int cRest::Get(const std::string& command, const std::string& arguments, Json::V
 	{
 		if (response.length() != 0)
 		{
-			Json::Reader reader;
+			std::string jsonReaderError;
+			Json::CharReaderBuilder jsonReaderBuilder;
+			std::unique_ptr<Json::CharReader> const reader(jsonReaderBuilder.newCharReader());
 
-			bool parsingSuccessful = reader.parse(response, json_response);
-
-			if (!parsingSuccessful)
+			if (!reader->parse(response.c_str(), response.c_str() + response.size(), &json_response, &jsonReaderError))
 			{
 				XBMC->Log(LOG_DEBUG, "Failed to parse %s: \n%s\n",
 					response.c_str(),
-					reader.getFormattedErrorMessages().c_str());
+					jsonReaderError.c_str());
 				return E_FAILED;
 			}
 		}
@@ -65,15 +66,15 @@ int cRest::Post(const std::string& command, const std::string& arguments, Json::
 	{
 		if (response.length() != 0)
 		{
-			Json::Reader reader;
+			std::string jsonReaderError;
+			Json::CharReaderBuilder jsonReaderBuilder;
+			std::unique_ptr<Json::CharReader> const reader(jsonReaderBuilder.newCharReader());
 
-			bool parsingSuccessful = reader.parse(response, json_response);
-
-			if (!parsingSuccessful)
+			if (!reader->parse(response.c_str(), response.c_str() + response.size(), &json_response, &jsonReaderError))
 			{
 				XBMC->Log(LOG_DEBUG, "Failed to parse %s: \n%s\n",
 					response.c_str(),
-					reader.getFormattedErrorMessages().c_str());
+					jsonReaderError.c_str());
 				return E_FAILED;
 			}
 		}
