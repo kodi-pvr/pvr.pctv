@@ -102,7 +102,7 @@ bool Pctv::Open()
   std::string strAuth = "";
   if (m_bUsePIN)
   {
-	  std::string pinMD5 = XBMCPVR::XBMC_MD5::GetMD5(g_strPin);
+	  std::string pinMD5 = XBMC_MD5::GetMD5(g_strPin);
 	  StringUtils::ToLower(pinMD5);
 
 	  strURL= StringUtils::Format("User:%s@", pinMD5.c_str());
