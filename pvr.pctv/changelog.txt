@@ -1,3 +1,6 @@
+2.3.1
+- Replace deprecated jsoncpp methods
+
 2.3.0
 - Updated to PVR addon API v5.8.0
 
