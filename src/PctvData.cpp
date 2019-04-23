@@ -686,15 +686,13 @@ PVR_ERROR Pctv::AddTimer(const PVR_TIMER &timer)
 /************************************************************/
 /** EPG  */
 
-PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
+PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iStart, time_t iEnd)
 {
-  XBMC->Log(LOG_DEBUG, "%s - Channel: %s\n", __FUNCTION__, channel.strChannelName);
-  
   Json::Value data;
   for (vector<PctvChannel>::iterator myChannel = m_channels.begin(); myChannel < m_channels.end(); ++myChannel)
   {
-    if (myChannel->iUniqueId != (int)channel.iUniqueId) continue;
-	  if (!GetEPG((int)channel.iUniqueId, iStart, iEnd, data)) continue;
+    if (myChannel->iUniqueId != iChannelUid) continue;
+	  if (!GetEPG(iChannelUid, iStart, iEnd, data)) continue;
     if (data.size() <= 0) continue;
 
     for (unsigned int index = 0; index < data.size(); ++index) 
@@ -729,7 +727,6 @@ PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel
         epg.firstAired = 0; // unused
         epg.iParentalRating = 0; // unused
         epg.iStarRating = 0; // unused
-        epg.bNotify = false;
         epg.iSeriesNumber = 0; // unused
         epg.iEpisodeNumber = 0; // unused
         epg.iEpisodePartNumber = 0; // unused
