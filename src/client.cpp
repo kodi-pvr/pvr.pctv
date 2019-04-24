@@ -405,12 +405,12 @@ void CloseLiveStream(void)
   }  
 }
 
-PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
+PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iStart, time_t iEnd)
 {
   if (!PctvData || !PctvData->IsConnected())
     return PVR_ERROR_SERVER_ERROR;
   
-  return PctvData->GetEPGForChannel(handle, channel, iStart, iEnd);
+  return PctvData->GetEPGForChannel(handle, iChannelUid, iStart, iEnd);
 }
 
 int GetRecordingsAmount(bool deleted)
@@ -523,6 +523,7 @@ long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */) 
 long long LengthRecordedStream(void) { return 0; }
 void DemuxReset(void) {}
 void DemuxFlush(void) {}
+void FillBuffer(bool mode) {}
 int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize) { return 0; }
 long long SeekLiveStream(long long iPosition, int iWhence /* = SEEK_SET */) { return -1; }
 long long LengthLiveStream(void) { return -1; }
@@ -533,7 +534,6 @@ bool CanPauseStream(void) { return false; }
 bool CanSeekStream(void) { return false; }
 bool SeekTime(double, bool, double*) { return false; }
 void SetSpeed(int) {};
-bool IsTimeshifting(void) { return false; }
 bool IsRealTimeStream() { return true; }
 PVR_ERROR UndeleteRecording(const PVR_RECORDING& recording) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DeleteAllRecordingsFromTrash() { return PVR_ERROR_NOT_IMPLEMENTED; }

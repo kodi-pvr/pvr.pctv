@@ -172,7 +172,7 @@ public:
   PVR_ERROR AddTimer(const PVR_TIMER &timer);    
 
   /* EPG */
-  PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd);  
+  PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iStart, time_t iEnd);  
   bool GetEPG(int id, time_t iStart, time_t iEnd, Json::Value& data);
   
   /* Preview */
