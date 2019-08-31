@@ -26,6 +26,11 @@ set(PCTV_HEADERS src/client.h
                  src/PctvData.h
                  src/rest.h)
 
+# To prevent build exit on deprecated warnings (from JsonCpp)
+if(WIN32)
+  add_compile_options(/wd4996)
+endif()
+
 build_addon(pvr.pctv PCTV DEPLIBS)
 
 include(CPack)
