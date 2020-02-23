@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/kodi-pvr/pvr.pctv.svg?branch=Leia)](https://travis-ci.org/kodi-pvr/pvr.pctv/branches)
+[![Build Status](https://dev.azure.com/teamkodi/kodi-pvr/_apis/build/status/kodi-pvr.pvr.pctv?branchName=Leia)](https://dev.azure.com/teamkodi/kodi-pvr/_build/latest?definitionId=66&branchName=Leia)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/5120/badge.svg)](https://scan.coverity.com/projects/5120)
 
 # PCTV PVR
