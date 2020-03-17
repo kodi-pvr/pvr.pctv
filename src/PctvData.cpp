@@ -441,6 +441,8 @@ void Pctv::TransferRecordings(ADDON_HANDLE handle)
     PctvRecording &recording = m_recordings.at(i);
     PVR_RECORDING tag;
     memset(&tag, 0, sizeof(PVR_RECORDING));
+    tag.iSeriesNumber = PVR_RECORDING_INVALID_SERIES_EPISODE;
+    tag.iEpisodeNumber = PVR_RECORDING_INVALID_SERIES_EPISODE;
     strncpy(tag.strRecordingId, recording.strRecordingId.c_str(), sizeof(tag.strRecordingId) -1);
     strncpy(tag.strTitle, recording.strTitle.c_str(), sizeof(tag.strTitle) -1);
     strncpy(tag.strPlotOutline, recording.strPlotOutline.c_str(), sizeof(tag.strPlotOutline) -1);
@@ -724,12 +726,12 @@ PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iS
         epg.iGenreType = 0; // unused
         epg.iGenreSubType = 0; // unused
         epg.strGenreDescription = "";
-        epg.firstAired = 0; // unused
+        epg.strFirstAired = ""; // unused
         epg.iParentalRating = 0; // unused
         epg.iStarRating = 0; // unused
-        epg.iSeriesNumber = 0; // unused
-        epg.iEpisodeNumber = 0; // unused
-        epg.iEpisodePartNumber = 0; // unused
+        epg.iSeriesNumber = EPG_TAG_INVALID_SERIES_EPISODE; // unused
+        epg.iEpisodeNumber = EPG_TAG_INVALID_SERIES_EPISODE; // unused
+        epg.iEpisodePartNumber = EPG_TAG_INVALID_SERIES_EPISODE; // unused
         epg.strEpisodeName = ""; // unused
         epg.iFlags = EPG_TAG_FLAG_UNDEFINED;
 
