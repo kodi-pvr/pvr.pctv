@@ -1,3 +1,11 @@
+3.1.2
+- Update Debian build code
+- Update with some minor cleanups
+- Update settings.xml to use new format
+- Cleanup source copyright to match SPDX
+- Add license name forum url and source url to addon.xml
+- Add GPL2+ license file and show GPL2+ on README.md
+
 3.1.1
 - Update PVR API 6.2.0
 
