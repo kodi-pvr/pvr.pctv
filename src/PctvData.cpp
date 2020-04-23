@@ -93,9 +93,9 @@ bool Pctv::Open()
 {
   CLockObject lock(m_mutex);
 
-  XBMC->Log(LOG_NOTICE, "%s - PCTV Systems Addon Configuration options", __FUNCTION__);
-  XBMC->Log(LOG_NOTICE, "%s - Hostname: '%s'", __FUNCTION__, g_strHostname.c_str());
-  XBMC->Log(LOG_NOTICE, "%s - WebPort: '%d'", __FUNCTION__, m_iPortWeb);
+  XBMC->Log(LOG_INFO, "%s - PCTV Systems Addon Configuration options", __FUNCTION__);
+  XBMC->Log(LOG_INFO, "%s - Hostname: '%s'", __FUNCTION__, g_strHostname.c_str());
+  XBMC->Log(LOG_INFO, "%s - WebPort: '%d'", __FUNCTION__, m_iPortWeb);
     
   m_bIsConnected = GetFreeConfig();
 
@@ -767,7 +767,7 @@ bool Pctv::GetEPG(int id, time_t iStart, time_t iEnd, Json::Value& data)
     return false;
   }
   
-  XBMC->Log(LOG_NOTICE, "EPG Loaded.");
+  XBMC->Log(LOG_INFO, "EPG Loaded.");
   return true;
 }
 
