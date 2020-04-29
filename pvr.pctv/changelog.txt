@@ -1,3 +1,6 @@
+3.1.5
+- Update PVR API 6.5.0
+
 3.1.4
 - Update PVR API 6.4.0
 - Minor cleanups
