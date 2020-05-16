@@ -25,6 +25,7 @@ bool           m_bCreated         = false;
 ADDON_STATUS   m_CurStatus        = ADDON_STATUS_UNKNOWN;
 
 PctvChannel    m_currentChannel;
+bool           m_bRecordingPlayback = false;
 
 /* User adjustable settings are saved here.
  * Default values are defined inside client.h
@@ -479,6 +480,8 @@ PVR_ERROR GetChannelStreamProperties(const PVR_CHANNEL* channel, PVR_NAMED_VALUE
   if (!PctvData || !PctvData->IsConnected())
     return PVR_ERROR_SERVER_ERROR;
 
+  m_bRecordingPlayback = false;
+
   return PctvData->GetChannelStreamProperties(channel, properties, iPropertiesCount);
 }
 
@@ -486,7 +489,14 @@ PVR_ERROR GetRecordingStreamProperties(const PVR_RECORDING* recording, PVR_NAMED
   if (!PctvData || !PctvData->IsConnected())
     return PVR_ERROR_SERVER_ERROR;
 
+  m_bRecordingPlayback = true;
+
   return PctvData->GetRecordingStreamProperties(recording, properties, iPropertiesCount);
+}
+
+bool IsRealTimeStream()
+{ 
+  return !m_bRecordingPlayback; 
 }
 
 /** UNUSED API FUNCTIONS */
@@ -522,7 +532,6 @@ bool CanPauseStream(void) { return false; }
 bool CanSeekStream(void) { return false; }
 bool SeekTime(double, bool, double*) { return false; }
 void SetSpeed(int) {};
-bool IsRealTimeStream() { return true; }
 PVR_ERROR UndeleteRecording(const PVR_RECORDING& recording) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DeleteAllRecordingsFromTrash() { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR OpenDialogChannelScan(void) { return PVR_ERROR_NOT_IMPLEMENTED; }
