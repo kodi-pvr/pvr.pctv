@@ -9,12 +9,8 @@
 
 #include "rest.h"
 
-#include <memory>
-#include <stdlib.h>
-#include <string.h>
-#include <vector>
-
-using namespace ADDON;
+#include <kodi/Filesystem.h>
+#include <kodi/General.h>
 
 int cRest::Get(const std::string& command, const std::string& arguments, Json::Value& json_response)
 {
@@ -33,14 +29,14 @@ int cRest::Get(const std::string& command, const std::string& arguments, Json::V
       if (!reader->parse(response.c_str(), response.c_str() + response.size(), &json_response,
                          &jsonReaderError))
       {
-        XBMC->Log(LOG_DEBUG, "Failed to parse %s: \n%s\n", response.c_str(),
+        kodi::Log(ADDON_LOG_DEBUG, "Failed to parse %s: \n%s\n", response.c_str(),
                   jsonReaderError.c_str());
         return E_FAILED;
       }
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Empty response");
+      kodi::Log(ADDON_LOG_DEBUG, "Empty response");
       return E_EMPTYRESPONSE;
     }
   }
@@ -67,14 +63,14 @@ int cRest::Post(const std::string& command,
       if (!reader->parse(response.c_str(), response.c_str() + response.size(), &json_response,
                          &jsonReaderError))
       {
-        XBMC->Log(LOG_DEBUG, "Failed to parse %s: \n%s\n", response.c_str(),
+        kodi::Log(ADDON_LOG_DEBUG, "Failed to parse %s: \n%s\n", response.c_str(),
                   jsonReaderError.c_str());
         return E_FAILED;
       }
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Empty response");
+      kodi::Log(ADDON_LOG_DEBUG, "Empty response");
       return E_EMPTYRESPONSE;
     }
   }
@@ -91,35 +87,32 @@ int httpRequest(const std::string& command,
 
   if (write)
   { // POST http request
-    void* hFile = XBMC->OpenFileForWrite(strUrl.c_str(), 0);
-    if (hFile != NULL)
+    kodi::vfs::CFile file;
+    if (file.OpenFileForWrite(strUrl, 0))
     {
-      int rc = XBMC->WriteFile(hFile, arguments.c_str(), arguments.length());
+      int rc = file.Write(arguments.c_str(), arguments.length());
       if (rc >= 0)
       {
         std::string result;
         result.clear();
-        char buffer[1024];
-        while (XBMC->ReadFileString(hFile, buffer, 1024))
+        std::string buffer;
+        while (file.ReadLine(buffer))
           result.append(buffer);
         json_response = result;
         return 0;
       }
-      XBMC->CloseFile(hFile);
     }
   }
   else
   { // GET http request
     strUrl += arguments;
-    void* fileHandle = XBMC->OpenFile(strUrl.c_str(), 0);
-    if (fileHandle)
+    kodi::vfs::CFile file;
+    if (file.OpenFile(strUrl, 0))
     {
       std::string result;
-      char buffer[1024];
-      while (XBMC->ReadFileString(fileHandle, buffer, 1024))
+      std::string buffer;
+      while (file.ReadLine(buffer))
         result.append(buffer);
-
-      XBMC->CloseFile(fileHandle);
       json_response = result;
       return 0;
     }

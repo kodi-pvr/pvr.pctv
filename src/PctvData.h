@@ -8,14 +8,12 @@
 
 #pragma once
 
-//#include <vector>
-#include "client.h"
 #include "rest.h"
 
-//#include "tinyxml/tinyxml.h"
 #include <atomic>
 #include <condition_variable>
 #include <json/json.h>
+#include <kodi/addon-instance/PVR.h>
 #include <mutex>
 #include <thread>
 
@@ -23,14 +21,22 @@
 
 #define CHANNELDATAVERSION 2
 
-class CCurlFile
-{
-public:
-  CCurlFile(void){};
-  ~CCurlFile(void){};
+#define URI_REST_CONFIG "/TVC/free/data/config"
+#define URI_REST_CHANNELS "/TVC/user/data/tv/channels"
+#define URI_REST_CHANNELLISTS "/TVC/user/data/tv/channellists"
+#define URI_REST_RECORDINGS "/TVC/user/data/gallery/video"
+#define URI_REST_TIMER "/TVC/user/data/recordingtasks"
+#define URI_REST_EPG "/TVC/user/data/epg"
+#define URI_REST_STORAGE "/TVC/user/data/storage"
+#define URI_REST_FOLDER "/TVC/user/data/folder"
 
-  bool Get(const std::string& strURL, std::string& strResult);
-};
+#define DEFAULT_TV_PIN "0000"
+
+#define URI_INDEX_HTML "/TVC/common/Login.html"
+
+#define DEFAULT_PREVIEW_MODE "m2ts"
+#define DEFAULT_PROFILE "m2ts.Native.NR"
+#define DEFAULT_REC_PROFILE "m2ts.4000k.HR"
 
 typedef enum PCTV_UPDATE_STATE
 {
@@ -146,11 +152,18 @@ struct PctvConfig
   }
 };
 
-class Pctv
+class ATTRIBUTE_HIDDEN Pctv : public kodi::addon::CInstancePVRClient
 {
 public:
   /* Class interface */
-  Pctv(void);
+  Pctv(const std::string strHostname,
+       int iPortWeb,
+       const std::string& strPin,
+       int iBitrate,
+       bool bTranscode,
+       bool bUsePIN,
+       KODI_HANDLE instance,
+       const std::string& kodiVersion);
   ~Pctv();
 
   /* Server */
@@ -158,50 +171,48 @@ public:
   bool IsConnected();
 
   /* Common */
-  const char* GetBackendName(void);
-  const char* GetBackendVersion(void);
+  PVR_ERROR GetCapabilities(kodi::addon::PVRCapabilities& capabilities) override;
+  PVR_ERROR GetBackendName(std::string& name) override;
+  PVR_ERROR GetBackendVersion(std::string& version) override;
+  PVR_ERROR GetBackendHostname(std::string& hostname) override;
+  PVR_ERROR GetConnectionString(std::string& connection) override;
   bool IsSupported(const std::string& cap);
 
   /* Channels */
-  unsigned int GetChannelsAmount(void);
-  bool GetChannel(const PVR_CHANNEL& channel, PctvChannel& myChannel);
-  PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio);
-  PVR_ERROR GetChannelStreamProperties(const PVR_CHANNEL* channel,
-                                       PVR_NAMED_VALUE* properties,
-                                       unsigned int* iPropertiesCount);
+  PVR_ERROR GetChannelsAmount(int& amount) override;
+  PVR_ERROR GetChannels(bool radio, kodi::addon::PVRChannelsResultSet& results) override;
+  PVR_ERROR GetChannelStreamProperties(
+      const kodi::addon::PVRChannel& channel,
+      std::vector<kodi::addon::PVRStreamProperty>& properties) override;
 
   /* Groups */
-  unsigned int GetChannelGroupsAmount(void);
-  PVR_ERROR GetChannelGroups(ADDON_HANDLE handle, bool bRadio);
-  PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP& group);
+  PVR_ERROR GetChannelGroupsAmount(int& amount) override;
+  PVR_ERROR GetChannelGroups(bool radio, kodi::addon::PVRChannelGroupsResultSet& results) override;
+  PVR_ERROR GetChannelGroupMembers(const kodi::addon::PVRChannelGroup& group,
+                                   kodi::addon::PVRChannelGroupMembersResultSet& results) override;
 
   /* Recordings */
-  PVR_ERROR GetRecordings(ADDON_HANDLE handle);
-  bool GetRecordingFromLocation(std::string strRecordingFolder);
-  unsigned int GetRecordingsAmount(void);
-  PVR_ERROR GetRecordingStreamProperties(const PVR_RECORDING* recording,
-                                         PVR_NAMED_VALUE* properties,
-                                         unsigned int* iPropertiesCount);
+  PVR_ERROR GetRecordingsAmount(bool deleted, int& amount) override;
+  PVR_ERROR GetRecordings(bool deleted, kodi::addon::PVRRecordingsResultSet& results) override;
+  PVR_ERROR GetRecordingStreamProperties(
+      const kodi::addon::PVRRecording& recording,
+      std::vector<kodi::addon::PVRStreamProperty>& properties) override;
 
   /* Timer */
-  unsigned int GetTimersAmount(void);
-  PVR_ERROR GetTimers(ADDON_HANDLE handle);
-  PVR_ERROR AddTimer(const PVR_TIMER& timer);
+  PVR_ERROR GetTimerTypes(std::vector<kodi::addon::PVRTimerType>& types) override;
+  PVR_ERROR GetTimersAmount(int& amount) override;
+  PVR_ERROR GetTimers(kodi::addon::PVRTimersResultSet& results) override;
+  PVR_ERROR AddTimer(const kodi::addon::PVRTimer& timer) override;
 
   /* EPG */
-  PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iStart, time_t iEnd);
+  PVR_ERROR GetEPGForChannel(int channelUid,
+                             time_t start,
+                             time_t end,
+                             kodi::addon::PVREPGTagsResultSet& results) override;
   bool GetEPG(int id, time_t iStart, time_t iEnd, Json::Value& data);
 
-  /* Preview */
-  const char* GetLiveStreamURL(const PVR_CHANNEL& channelinfo);
-  void CloseLiveStream();
-  long long SeekLiveStream(long long iPosition, int iWhence /* = SEEK_SET */);
-  long long PositionLiveStream(void);
-  long long LengthLiveStream(void);
-  int ReadLiveStream(unsigned char* pBuffer, unsigned int iBufferSize);
-
   /* Storage */
-  PVR_ERROR GetStorageInfo(long long* total, long long* used);
+  PVR_ERROR GetDriveSpace(uint64_t& total, uint64_t& used) override;
 
 private:
   // helper functions
@@ -220,17 +231,18 @@ private:
   int RESTGetStorage(Json::Value& response);
   int RESTGetFolder(Json::Value& response);
 
-  int RESTAddTimer(const PVR_TIMER& timer, Json::Value& response);
+  int RESTAddTimer(const kodi::addon::PVRTimer& timer, Json::Value& response);
 
   // helper functions
   std::string URLEncodeInline(const std::string& sSrc);
-  void TransferChannels(ADDON_HANDLE handle);
-  void TransferRecordings(ADDON_HANDLE handle);
-  void TransferTimer(ADDON_HANDLE handle);
-  void TransferGroups(ADDON_HANDLE handle);
-  bool replace(std::string& str, const std::string& from, const std::string& to);
+  void TransferChannels(kodi::addon::PVRChannelsResultSet& results);
+  void TransferRecordings(kodi::addon::PVRRecordingsResultSet& results);
+  void TransferTimer(kodi::addon::PVRTimersResultSet& results);
+  void TransferGroups(kodi::addon::PVRChannelGroupsResultSet& results);
   bool IsRecordFolderSet(std::string& partitionId);
-  std::string GetPreviewParams(ADDON_HANDLE handle, Json::Value entry);
+  bool GetRecordingFromLocation(std::string strRecordingFolder);
+  bool GetChannel(const kodi::addon::PVRChannel& channel, PctvChannel& myChannel);
+  std::string GetPreviewParams(int dataIdentifier, Json::Value entry);
   std::string GetPreviewUrl(std::string params);
   std::string GetTranscodeProfileValue();
   std::string GetStid(int id);
@@ -245,22 +257,26 @@ private:
   std::condition_variable m_started;
   std::atomic<bool> m_running = {false};
 
-  bool m_bIsConnected;
+  // Setting values
   std::string m_strHostname;
-  std::string m_strBaseUrl;
-  std::string m_strBackendName;
-  std::string m_strBackendVersion;
-  PctvConfig m_config;
+  int m_iPortWeb;
+  std::string m_strPin;
   int m_iBitrate;
   bool m_bTranscode;
   bool m_bUsePIN;
-  int m_iPortWeb;
-  int m_iNumChannels;
-  int m_iNumRecordings;
-  int m_iNumGroups;
-  std::string m_strPreviewMode;
+
+  int m_iDataIdentifier;
+  bool m_bIsConnected = false;
+  std::string m_strBaseUrl;
+  std::string m_strBackendName;
+  std::string m_strBackendVersion;
+  PctvConfig m_config = {"", "", "", 0, ""};
+  int m_iNumChannels = 0;
+  int m_iNumRecordings = 0;
+  int m_iNumGroups = 0;
+  std::string m_strPreviewMode = DEFAULT_PREVIEW_MODE;
   std::string m_strStid;
-  bool m_bUpdating;
+  bool m_bUpdating = false;
   std::string m_strBackendUrlNoAuth;
 
   std::vector<PctvEpgChannel> m_epg;

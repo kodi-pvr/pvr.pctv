@@ -8,61 +8,39 @@
 
 #include "PctvData.h"
 
-#include "client.h"
 #include "md5.h"
 #include "utils.h"
 
 #include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <string>
-
-#define URI_REST_CONFIG "/TVC/free/data/config"
-#define URI_REST_CHANNELS "/TVC/user/data/tv/channels"
-#define URI_REST_CHANNELLISTS "/TVC/user/data/tv/channellists"
-#define URI_REST_RECORDINGS "/TVC/user/data/gallery/video"
-#define URI_REST_TIMER "/TVC/user/data/recordingtasks"
-#define URI_REST_EPG "/TVC/user/data/epg"
-#define URI_REST_STORAGE "/TVC/user/data/storage"
-#define URI_REST_FOLDER "/TVC/user/data/folder"
-
-#define DEFAULT_TV_PIN "0000"
-
-#define URI_INDEX_HTML "/TVC/common/Login.html"
-
-#define DEFAULT_PREVIEW_MODE "m2ts"
-#define DEFAULT_PROFILE "m2ts.Native.NR"
-#define DEFAULT_REC_PROFILE "m2ts.4000k.HR"
-
-using namespace std;
-using namespace ADDON;
-
+#include <kodi/General.h>
 
 /************************************************************/
 /** Class interface */
 
-Pctv::Pctv()
-  : m_strBaseUrl(""),
-    m_strStid(""),
-    m_strPreviewMode(DEFAULT_PREVIEW_MODE),
-    m_config({"", "", "", 0, ""})
+Pctv::Pctv(const std::string strHostname,
+           int iPortWeb,
+           const std::string& strPin,
+           int iBitrate,
+           bool bTranscode,
+           bool bUsePIN,
+           KODI_HANDLE instance,
+           const std::string& kodiVersion)
+  : kodi::addon::CInstancePVRClient(instance, kodiVersion),
+    m_strHostname(strHostname),
+    m_iPortWeb(iPortWeb),
+    m_strPin(strPin),
+    m_iBitrate(iBitrate),
+    m_bTranscode(bTranscode),
+    m_bUsePIN(bUsePIN)
 {
-  m_bIsConnected = false;
-  m_bUpdating = false;
-  m_iNumChannels = 0;
-  m_iNumRecordings = 0;
-  m_iNumGroups = 0;
-  m_iBitrate = g_iBitrate;
-  m_bTranscode = g_bTranscode;
-  m_bUsePIN = g_bUsePIN;
-  m_iPortWeb = g_iPortWeb;
-  m_strBackendUrlNoAuth = StringUtils::Format("http://%s:%u", g_strHostname.c_str(), m_iPortWeb);
+  srand(time(nullptr));
+  m_iDataIdentifier = rand();
+  m_strBackendUrlNoAuth = StringUtils::Format("http://%s:%u", m_strHostname.c_str(), m_iPortWeb);
 }
 
 void Pctv::Process()
 {
-  XBMC->Log(LOG_DEBUG, "%s - starting", __FUNCTION__);
+  kodi::Log(ADDON_LOG_DEBUG, "%s - starting", __func__);
 
   std::lock_guard<std::mutex> lock(m_mutex);
   m_started.notify_all();
@@ -73,37 +51,28 @@ void Pctv::Process()
 Pctv::~Pctv()
 {
   std::lock_guard<std::mutex> lock(m_mutex);
-  XBMC->Log(LOG_DEBUG, "%s Stopping update thread...", __FUNCTION__);
+  kodi::Log(ADDON_LOG_DEBUG, "%s Stopping update thread...", __func__);
   m_running = false;
   if (m_thread.joinable())
     m_thread.join();
-
-  XBMC->Log(LOG_DEBUG, "%s Removing internal channels list...", __FUNCTION__);
-  m_channels.clear();
-  m_groups.clear();
-  m_epg.clear();
-  m_recordings.clear();
-  m_timer.clear();
-  m_partitions.clear();
-  m_bIsConnected = false;
 }
 
 bool Pctv::Open()
 {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  XBMC->Log(LOG_INFO, "%s - PCTV Systems Addon Configuration options", __FUNCTION__);
-  XBMC->Log(LOG_INFO, "%s - Hostname: '%s'", __FUNCTION__, g_strHostname.c_str());
-  XBMC->Log(LOG_INFO, "%s - WebPort: '%d'", __FUNCTION__, m_iPortWeb);
+  kodi::Log(ADDON_LOG_INFO, "%s - PCTV Systems Addon Configuration options", __func__);
+  kodi::Log(ADDON_LOG_INFO, "%s - Hostname: '%s'", __func__, m_strHostname.c_str());
+  kodi::Log(ADDON_LOG_INFO, "%s - WebPort: '%d'", __func__, m_iPortWeb);
 
   m_bIsConnected = GetFreeConfig();
 
   if (!m_bIsConnected)
   {
-    XBMC->Log(LOG_ERROR,
+    kodi::Log(ADDON_LOG_ERROR,
               "%s It seem's that pctv cannot be reached. Make sure that you set the correct "
               "configuration options in the addon settings!",
-              __FUNCTION__);
+              __func__);
     return false;
   }
 
@@ -112,7 +81,7 @@ bool Pctv::Open()
   std::string strAuth = "";
   if (m_bUsePIN)
   {
-    std::string pinMD5 = XBMC_MD5::GetMD5(g_strPin);
+    std::string pinMD5 = XBMC_MD5::GetMD5(m_strPin);
     std::transform(pinMD5.begin(), pinMD5.end(), pinMD5.begin(), ::tolower);
 
     strURL = StringUtils::Format("User:%s@", pinMD5.c_str());
@@ -123,7 +92,7 @@ bool Pctv::Open()
     }
   }
 
-  strURL = StringUtils::Format("http://%s%s:%u%s", strURL.c_str(), g_strHostname.c_str(),
+  strURL = StringUtils::Format("http://%s%s:%u%s", strURL.c_str(), m_strHostname.c_str(),
                                m_iPortWeb, strAuth.c_str());
   m_strBaseUrl = strURL;
 
@@ -144,23 +113,30 @@ bool Pctv::Open()
     LoadChannels();
   }
 
-  XBMC->Log(LOG_INFO, "%s Starting separate client update thread...", __FUNCTION__);
+  kodi::Log(ADDON_LOG_INFO, "%s Starting separate client update thread...", __func__);
   m_running = true;
   m_thread = std::thread([&] { Process(); });
 
   return m_running;
 }
 
-void Pctv::CloseLiveStream(void)
-{
-  XBMC->Log(LOG_DEBUG, "CloseLiveStream");
-}
-
 /************************************************************/
 /** Channels  */
-PVR_ERROR Pctv::GetChannels(ADDON_HANDLE handle, bool bRadio)
+
+PVR_ERROR Pctv::GetChannelsAmount(int& amount)
 {
-  XBMC->Log(LOG_DEBUG, "%s", __FUNCTION__);
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+  amount = m_channels.size();
+  return PVR_ERROR_NO_ERROR;
+}
+
+PVR_ERROR Pctv::GetChannels(bool radio, kodi::addon::PVRChannelsResultSet& results)
+{
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
+  kodi::Log(ADDON_LOG_DEBUG, "%s", __func__);
   m_iNumChannels = 0;
   m_channels.clear();
 
@@ -170,7 +146,7 @@ PVR_ERROR Pctv::GetChannels(ADDON_HANDLE handle, bool bRadio)
 
   if (retval < 0)
   {
-    XBMC->Log(LOG_ERROR, "No channels available.");
+    kodi::Log(ADDON_LOG_ERROR, "No channels available.");
     return PVR_ERROR_SERVER_ERROR;
   }
 
@@ -201,13 +177,13 @@ PVR_ERROR Pctv::GetChannels(ADDON_HANDLE handle, bool bRadio)
     }
     channel.iEncryptionSystem = 0;
     std::string params;
-    params = GetPreviewParams(handle, entry);
+    params = GetPreviewParams(m_iDataIdentifier, entry);
     channel.strStreamURL = GetPreviewUrl(params);
     channel.strLogoPath = GetChannelLogo(entry);
     m_iNumChannels++;
     m_channels.push_back(channel);
 
-    XBMC->Log(LOG_DEBUG, "%s loaded Channel entry '%s'", __FUNCTION__,
+    kodi::Log(ADDON_LOG_DEBUG, "%s loaded Channel entry '%s'", __func__,
               channel.strChannelName.c_str());
   }
 
@@ -216,55 +192,50 @@ PVR_ERROR Pctv::GetChannels(ADDON_HANDLE handle, bool bRadio)
     std::sort(m_channels.begin(), m_channels.end());
   }
 
-  XBMC->QueueNotification(QUEUE_INFO, "%d channels loaded.", m_channels.size());
+  kodi::QueueFormattedNotification(QUEUE_INFO, "%d channels loaded.", m_channels.size());
 
-  TransferChannels(handle);
+  TransferChannels(results);
 
   return PVR_ERROR_NO_ERROR;
 }
 
-
-void Pctv::TransferChannels(ADDON_HANDLE handle)
+void Pctv::TransferChannels(kodi::addon::PVRChannelsResultSet& results)
 {
   for (unsigned int i = 0; i < m_channels.size(); i++)
   {
     std::string strTmp;
     PctvChannel& channel = m_channels.at(i);
-    PVR_CHANNEL tag;
-    memset(&tag, 0, sizeof(PVR_CHANNEL));
-    tag.iUniqueId = channel.iUniqueId;
-    tag.iChannelNumber = channel.iChannelNumber;
-    tag.iSubChannelNumber = channel.iSubChannelNumber;
-    tag.iEncryptionSystem = channel.iEncryptionSystem;
-    strncpy(tag.strChannelName, channel.strChannelName.c_str(), sizeof(tag.strChannelName));
-    strncpy(tag.strInputFormat, m_strPreviewMode.c_str(), sizeof(tag.strInputFormat));
-    strncpy(tag.strIconPath, channel.strLogoPath.c_str(), sizeof(tag.strIconPath));
-    PVR->TransferChannelEntry(handle, &tag);
+    kodi::addon::PVRChannel tag;
+
+    tag.SetUniqueId(channel.iUniqueId);
+    tag.SetChannelNumber(channel.iChannelNumber);
+    tag.SetSubChannelNumber(channel.iSubChannelNumber);
+    tag.SetEncryptionSystem(channel.iEncryptionSystem);
+    tag.SetChannelName(channel.strChannelName);
+    tag.SetMimeType(m_strPreviewMode);
+    tag.SetIconPath(channel.strLogoPath);
+
+    results.Add(tag);
   }
 }
 
-
 bool Pctv::LoadChannels()
 {
-  PVR->TriggerChannelGroupsUpdate();
-  PVR->TriggerChannelUpdate();
+  kodi::addon::CInstancePVRClient::TriggerChannelGroupsUpdate();
+  kodi::addon::CInstancePVRClient::TriggerChannelUpdate();
   return true;
 }
 
-PVR_ERROR Pctv::GetChannelStreamProperties(const PVR_CHANNEL* channel,
-                                           PVR_NAMED_VALUE* properties,
-                                           unsigned int* iPropertiesCount)
+PVR_ERROR Pctv::GetChannelStreamProperties(const kodi::addon::PVRChannel& channel,
+                                           std::vector<kodi::addon::PVRStreamProperty>& properties)
 {
-  if (*iPropertiesCount < 2)
-    return PVR_ERROR_INVALID_PARAMETERS;
-
-std:
-  string strUrl;
+  std::string strUrl;
   for (const auto& pctvChannel : m_channels)
   {
-    if (pctvChannel.iUniqueId == channel->iUniqueId)
+    if (pctvChannel.iUniqueId == channel.GetUniqueId())
     {
       strUrl = pctvChannel.strStreamURL;
+      break;
     }
   }
 
@@ -272,13 +243,9 @@ std:
   {
     return PVR_ERROR_FAILED;
   }
-  strncpy(properties[0].strName, PVR_STREAM_PROPERTY_STREAMURL, sizeof(properties[0].strName) - 1);
-  strncpy(properties[0].strValue, strUrl.c_str(), sizeof(properties[0].strValue) - 1);
-  strncpy(properties[1].strName, PVR_STREAM_PROPERTY_ISREALTIMESTREAM,
-          sizeof(properties[1].strName) - 1);
-  strncpy(properties[1].strValue, "true", sizeof(properties[1].strValue) - 1);
 
-  *iPropertiesCount = 2;
+  properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, strUrl);
+  properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
 
   return PVR_ERROR_NO_ERROR;
 }
@@ -286,13 +253,20 @@ std:
 /************************************************************/
 /** Groups  */
 
-unsigned int Pctv::GetChannelGroupsAmount()
+PVR_ERROR Pctv::GetChannelGroupsAmount(int& amount)
 {
-  return m_iNumGroups;
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+  amount = m_iNumGroups;
+  return PVR_ERROR_NO_ERROR;
 }
 
-PVR_ERROR Pctv::GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
+PVR_ERROR Pctv::GetChannelGroups(bool radio, kodi::addon::PVRChannelGroupsResultSet& results)
+
 {
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
   m_iNumGroups = 0;
   m_groups.clear();
 
@@ -302,7 +276,7 @@ PVR_ERROR Pctv::GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
 
   if (retval < 0)
   {
-    XBMC->Log(LOG_ERROR, "No channels available.");
+    kodi::Log(ADDON_LOG_ERROR, "No channels available.");
     return PVR_ERROR_SERVER_ERROR;
   }
 
@@ -337,37 +311,44 @@ PVR_ERROR Pctv::GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
     m_groups.push_back(group);
     m_iNumGroups++;
 
-    XBMC->Log(LOG_DEBUG, "%s loaded channelist entry '%s'", __FUNCTION__,
+    kodi::Log(ADDON_LOG_DEBUG, "%s loaded channelist entry '%s'", __func__,
               group.strGroupName.c_str());
   }
 
-  XBMC->QueueNotification(QUEUE_INFO, "%d groups loaded.", m_groups.size());
+  kodi::QueueFormattedNotification(QUEUE_INFO, "%d groups loaded.", m_groups.size());
 
-  TransferGroups(handle);
+  TransferGroups(results);
 
   return PVR_ERROR_NO_ERROR;
 }
 
-void Pctv::TransferGroups(ADDON_HANDLE handle)
+void Pctv::TransferGroups(kodi::addon::PVRChannelGroupsResultSet& results)
 {
   for (unsigned int i = 0; i < m_groups.size(); i++)
   {
     std::string strTmp;
     PctvChannelGroup& group = m_groups.at(i);
 
-    PVR_CHANNEL_GROUP tag;
-    memset(&tag, 0, sizeof(PVR_CHANNEL_GROUP));
-    tag.bIsRadio = false;
-    tag.iPosition = 0; // groups default order, unused
-    strncpy(tag.strGroupName, group.strGroupName.c_str(), sizeof(tag.strGroupName));
+    kodi::addon::PVRChannelGroup tag;
 
-    PVR->TransferChannelGroup(handle, &tag);
+    tag.SetIsRadio(false);
+    tag.SetPosition(0); // groups default order, unused
+    tag.SetGroupName(group.strGroupName);
+
+    results.Add(tag);
   }
 }
 
-PVR_ERROR Pctv::GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP& group)
+PVR_ERROR Pctv::GetChannelGroupMembers(const kodi::addon::PVRChannelGroup& group,
+                                       kodi::addon::PVRChannelGroupMembersResultSet& results)
 {
-  std::string strTmp = group.strGroupName;
+  if (group.GetIsRadio())
+    return PVR_ERROR_NO_ERROR;
+
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
+  std::string strTmp = group.GetGroupName();
   for (unsigned int i = 0; i < m_groups.size(); i++)
   {
     PctvChannelGroup& g = m_groups.at(i);
@@ -375,13 +356,12 @@ PVR_ERROR Pctv::GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GR
     {
       for (unsigned int i = 0; i < g.members.size(); i++)
       {
-        PVR_CHANNEL_GROUP_MEMBER tag;
-        memset(&tag, 0, sizeof(PVR_CHANNEL_GROUP_MEMBER));
+        kodi::addon::PVRChannelGroupMember tag;
 
-        tag.iChannelUniqueId = g.members[i];
-        strncpy(tag.strGroupName, g.strGroupName.c_str(), sizeof(tag.strGroupName));
+        tag.SetChannelUniqueId(g.members[i]);
+        tag.SetGroupName(g.strGroupName);
 
-        PVR->TransferChannelGroupMember(handle, &tag);
+        results.Add(tag);
       }
     }
   }
@@ -406,13 +386,13 @@ int Pctv::RESTGetChannelLists(Json::Value& response)
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+      kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
       return -1;
     }
   }
   else
   {
-    XBMC->Log(LOG_DEBUG, "Request Recordings failed. Return value: %i\n", retval);
+    kodi::Log(ADDON_LOG_DEBUG, "Request Recordings failed. Return value: %i\n", retval);
   }
 
   return retval;
@@ -421,8 +401,20 @@ int Pctv::RESTGetChannelLists(Json::Value& response)
 /************************************************************/
 /** Recordings  */
 
-PVR_ERROR Pctv::GetRecordings(ADDON_HANDLE handle)
+PVR_ERROR Pctv::GetRecordingsAmount(bool deleted, int& amount)
 {
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
+  amount = m_iNumRecordings;
+  return PVR_ERROR_NO_ERROR;
+}
+
+PVR_ERROR Pctv::GetRecordings(bool deleted, kodi::addon::PVRRecordingsResultSet& results)
+{
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
   m_iNumRecordings = 0;
   m_recordings.clear();
 
@@ -444,50 +436,48 @@ PVR_ERROR Pctv::GetRecordings(ADDON_HANDLE handle)
       recording.iLastPlayedPosition =
           static_cast<int>(entry["Resume"].asDouble() / 1000); // in seconds
 
-      std::string params = GetPreviewParams(handle, entry);
+      std::string params = GetPreviewParams(m_iDataIdentifier, entry);
       recording.strStreamURL = GetPreviewUrl(params);
       m_iNumRecordings++;
       m_recordings.push_back(recording);
 
-      XBMC->Log(LOG_DEBUG, "%s loaded Recording entry '%s'", __FUNCTION__,
+      kodi::Log(ADDON_LOG_DEBUG, "%s loaded Recording entry '%s'", __func__,
                 recording.strTitle.c_str());
     }
   }
 
-  XBMC->QueueNotification(QUEUE_INFO, "%d recordings loaded.", m_recordings.size());
+  kodi::QueueFormattedNotification(QUEUE_INFO, "%d recordings loaded.", m_recordings.size());
 
-  TransferRecordings(handle);
+  TransferRecordings(results);
 
   return PVR_ERROR_NO_ERROR;
 }
 
-void Pctv::TransferRecordings(ADDON_HANDLE handle)
+void Pctv::TransferRecordings(kodi::addon::PVRRecordingsResultSet& results)
 {
   for (unsigned int i = 0; i < m_recordings.size(); i++)
   {
     PctvRecording& recording = m_recordings.at(i);
-    PVR_RECORDING tag;
-    memset(&tag, 0, sizeof(PVR_RECORDING));
-    tag.iSeriesNumber = PVR_RECORDING_INVALID_SERIES_EPISODE;
-    tag.iEpisodeNumber = PVR_RECORDING_INVALID_SERIES_EPISODE;
-    strncpy(tag.strRecordingId, recording.strRecordingId.c_str(), sizeof(tag.strRecordingId) - 1);
-    strncpy(tag.strTitle, recording.strTitle.c_str(), sizeof(tag.strTitle) - 1);
-    strncpy(tag.strPlotOutline, recording.strPlotOutline.c_str(), sizeof(tag.strPlotOutline) - 1);
-    strncpy(tag.strPlot, recording.strPlot.c_str(), sizeof(tag.strPlot) - 1);
-    strncpy(tag.strChannelName, recording.strChannelName.c_str(), sizeof(tag.strChannelName) - 1);
-    strncpy(tag.strIconPath, recording.strIconPath.c_str(), sizeof(tag.strIconPath) - 1);
+    kodi::addon::PVRRecording tag;
+
+    tag.SetRecordingId(recording.strRecordingId);
+    tag.SetTitle(recording.strTitle);
+    tag.SetPlotOutline(recording.strPlotOutline);
+    tag.SetPlot(recording.strPlot);
+    tag.SetChannelName(recording.strChannelName);
+    tag.SetIconPath(recording.strIconPath);
     recording.strDirectory = "";
-    strncpy(tag.strDirectory, recording.strDirectory.c_str(), sizeof(tag.strDirectory) - 1);
-    tag.recordingTime = recording.startTime;
-    tag.iDuration = recording.iDuration;
+    tag.SetDirectory(recording.strDirectory);
+    tag.SetRecordingTime(recording.startTime);
+    tag.SetDuration(recording.iDuration);
 
     /* TODO: PVR API 5.0.0: Implement this */
-    tag.iChannelUid = PVR_CHANNEL_INVALID_UID;
+    tag.SetChannelUid(PVR_CHANNEL_INVALID_UID);
 
     /* TODO: PVR API 5.1.0: Implement this */
-    tag.channelType = PVR_RECORDING_CHANNEL_TYPE_UNKNOWN;
+    tag.SetChannelType(PVR_RECORDING_CHANNEL_TYPE_UNKNOWN);
 
-    PVR->TransferRecordingEntry(handle, &tag);
+    results.Add(tag);
   }
 }
 
@@ -504,32 +494,29 @@ int Pctv::RESTGetRecordings(Json::Value& response)
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::objectValue\n");
+      kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::objectValue\n");
       return -1;
     }
   }
   else
   {
-    XBMC->Log(LOG_DEBUG, "Request Recordings failed. Return value: %i\n", retval);
+    kodi::Log(ADDON_LOG_DEBUG, "Request Recordings failed. Return value: %i\n", retval);
   }
 
   return retval;
 }
 
-unsigned int Pctv::GetRecordingsAmount()
+PVR_ERROR Pctv::GetRecordingStreamProperties(
+    const kodi::addon::PVRRecording& recording,
+    std::vector<kodi::addon::PVRStreamProperty>& properties)
 {
-  return m_iNumRecordings;
-}
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
 
-PVR_ERROR Pctv::GetRecordingStreamProperties(const PVR_RECORDING* recording,
-                                             PVR_NAMED_VALUE* properties,
-                                             unsigned int* iPropertiesCount)
-{
-std:
-  string strRecordingFile;
+  std::string strRecordingFile;
   for (const auto& PctvRec : m_recordings)
   {
-    if (strcmp(PctvRec.strRecordingId.c_str(), recording->strRecordingId) == 0)
+    if (PctvRec.strRecordingId == recording.GetRecordingId())
     {
       strRecordingFile = PctvRec.strStreamURL;
     }
@@ -538,29 +525,40 @@ std:
   if (strRecordingFile.empty())
     return PVR_ERROR_SERVER_ERROR;
 
-  strncpy(properties[0].strName, PVR_STREAM_PROPERTY_STREAMURL, sizeof(properties[0].strName) - 1);
-  strncpy(properties[0].strValue, strRecordingFile.c_str(), sizeof(properties[0].strValue) - 1);
-  *iPropertiesCount = 1;
+  properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, strRecordingFile);
   return PVR_ERROR_NO_ERROR;
 }
 
 /************************************************************/
 /** Timer */
 
-unsigned int Pctv::GetTimersAmount(void)
+PVR_ERROR Pctv::GetTimerTypes(std::vector<kodi::addon::PVRTimerType>& types)
 {
-  return m_timer.size();
+  /* TODO: Implement this to get support for the timer features introduced with PVR API 1.9.7 */
+  return PVR_ERROR_NOT_IMPLEMENTED;
 }
 
-PVR_ERROR Pctv::GetTimers(ADDON_HANDLE handle)
+PVR_ERROR Pctv::GetTimersAmount(int& amount)
 {
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
+  amount = m_timer.size();
+  return PVR_ERROR_NO_ERROR;
+}
+
+PVR_ERROR Pctv::GetTimers(kodi::addon::PVRTimersResultSet& results)
+{
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
   m_timer.clear();
 
   Json::Value data;
   int retval = RESTGetTimer(data);
   if (retval < 0)
   {
-    XBMC->Log(LOG_ERROR, "No timer available.");
+    kodi::Log(ADDON_LOG_ERROR, "No timer available.");
     return PVR_ERROR_SERVER_ERROR;
   }
 
@@ -597,40 +595,38 @@ PVR_ERROR Pctv::GetTimers(ADDON_HANDLE handle)
 
     m_timer.push_back(timer);
 
-    XBMC->Log(LOG_DEBUG, "%s loaded Timer entry '%s'", __FUNCTION__, timer.strTitle.c_str());
+    kodi::Log(ADDON_LOG_DEBUG, "%s loaded Timer entry '%s'", __func__, timer.strTitle.c_str());
   }
 
-  XBMC->QueueNotification(QUEUE_INFO, "%d timer loaded.", m_timer.size());
+  kodi::QueueFormattedNotification(QUEUE_INFO, "%d timer loaded.", m_timer.size());
 
-  TransferTimer(handle);
+  TransferTimer(results);
 
   return PVR_ERROR_NO_ERROR;
 }
 
-void Pctv::TransferTimer(ADDON_HANDLE handle)
+void Pctv::TransferTimer(kodi::addon::PVRTimersResultSet& results)
 {
   for (unsigned int i = 0; i < m_timer.size(); i++)
   {
     std::string strTmp;
     PctvTimer& timer = m_timer.at(i);
-    PVR_TIMER tag;
-    memset(&tag, 0, sizeof(PVR_TIMER));
+    kodi::addon::PVRTimer tag;
 
     /* TODO: Implement own timer types to get support for the timer features introduced with PVR API 1.9.7 */
-    tag.iTimerType = PVR_TIMER_TYPE_NONE;
+    tag.SetTimerType(PVR_TIMER_TYPE_NONE);
 
-    tag.iClientIndex = timer.iId;
-    tag.iClientChannelUid = timer.iChannelId;
-    strncpy(tag.strTitle, timer.strTitle.c_str(), sizeof(tag.strTitle));
-    tag.startTime = timer.startTime;
-    tag.endTime = timer.endTime;
-    tag.state = timer.state;
-    tag.strDirectory[0] = '\0';
-    tag.iPriority = 0;
-    tag.iLifetime = 0;
-    tag.iEpgUid = 0;
+    tag.SetClientIndex(timer.iId);
+    tag.SetClientChannelUid(timer.iChannelId);
+    tag.SetTitle(timer.strTitle);
+    tag.SetStartTime(timer.startTime);
+    tag.SetEndTime(timer.endTime);
+    tag.SetState(timer.state);
+    tag.SetPriority(0);
+    tag.SetLifetime(0);
+    tag.SetEPGUid(0);
 
-    PVR->TransferTimerEntry(handle, &tag);
+    results.Add(tag);
   }
 }
 
@@ -648,30 +644,30 @@ int Pctv::RESTGetTimer(Json::Value& response)
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+      kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
       return -1;
     }
   }
   else
   {
-    XBMC->Log(LOG_DEBUG, "Request Timer failed. Return value: %i\n", retval);
+    kodi::Log(ADDON_LOG_DEBUG, "Request Timer failed. Return value: %i\n", retval);
   }
 
   return retval;
 }
 
-
-int Pctv::RESTAddTimer(const PVR_TIMER& timer, Json::Value& response)
+int Pctv::RESTAddTimer(const kodi::addon::PVRTimer& timer, Json::Value& response)
 {
   std::string strQueryString;
   strQueryString = StringUtils::Format(
       "{\"Id\":0,\"ChannelId\":%i,\"State\":\"%s\",\"RealStartTime\":%llu,\"RealEndTime\":%llu,"
       "\"StartOffset\":%llu,\"EndOffset\":%llu,\"DisplayName\":\"%s\",\"Recurrence\":%i,"
       "\"ChannelListId\":%i,\"Profile\":\"%s\"}",
-      timer.iClientChannelUid, "Idle", static_cast<unsigned long long>(timer.startTime) * 1000,
-      static_cast<unsigned long long>(timer.endTime) * 1000,
-      static_cast<unsigned long long>(timer.iMarginStart) * 1000,
-      static_cast<unsigned long long>(timer.iMarginEnd) * 1000, timer.strTitle, 0, 0,
+      timer.GetClientChannelUid(), "Idle",
+      static_cast<unsigned long long>(timer.GetStartTime()) * 1000,
+      static_cast<unsigned long long>(timer.GetEndTime()) * 1000,
+      static_cast<unsigned long long>(timer.GetMarginStart()) * 1000,
+      static_cast<unsigned long long>(timer.GetMarginEnd()) * 1000, timer.GetTitle().c_str(), 0, 0,
       DEFAULT_REC_PROFILE);
 
   cRest rest;
@@ -686,31 +682,34 @@ int Pctv::RESTAddTimer(const PVR_TIMER& timer, Json::Value& response)
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+      kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
       return -1;
     }
   }
   else
   {
-    XBMC->Log(LOG_DEBUG, "Request Timer failed. Return value: %i\n", retval);
+    kodi::Log(ADDON_LOG_DEBUG, "Request Timer failed. Return value: %i\n", retval);
     return -1;
   }
 
   // Trigger a timer update to receive new timer from Broadway
-  PVR->TriggerTimerUpdate();
-  if (timer.startTime <= 0)
+  kodi::addon::CInstancePVRClient::TriggerTimerUpdate();
+  if (timer.GetStartTime() <= 0)
   {
     // Refresh the recordings
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    PVR->TriggerRecordingUpdate();
+    kodi::addon::CInstancePVRClient::TriggerRecordingUpdate();
   }
 
   return retval;
 }
 
-PVR_ERROR Pctv::AddTimer(const PVR_TIMER& timer)
+PVR_ERROR Pctv::AddTimer(const kodi::addon::PVRTimer& timer)
 {
-  XBMC->Log(LOG_DEBUG, "AddTimer iClientChannelUid: %i\n", timer.iClientChannelUid);
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
+  kodi::Log(ADDON_LOG_DEBUG, "AddTimer iClientChannelUid: %i\n", timer.GetClientChannelUid());
 
   Json::Value data;
   int retval = RESTAddTimer(timer, data);
@@ -722,19 +721,23 @@ PVR_ERROR Pctv::AddTimer(const PVR_TIMER& timer)
   return PVR_ERROR_SERVER_ERROR;
 }
 
-
 /************************************************************/
 /** EPG  */
 
-PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iStart, time_t iEnd)
+PVR_ERROR Pctv::GetEPGForChannel(int channelUid,
+                                 time_t start,
+                                 time_t end,
+                                 kodi::addon::PVREPGTagsResultSet& results)
 {
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
   Json::Value data;
-  for (vector<PctvChannel>::iterator myChannel = m_channels.begin(); myChannel < m_channels.end();
-       ++myChannel)
+  for (const auto& myChannel : m_channels)
   {
-    if (myChannel->iUniqueId != iChannelUid)
+    if (myChannel.iUniqueId != channelUid)
       continue;
-    if (!GetEPG(iChannelUid, iStart, iEnd, data))
+    if (!GetEPG(channelUid, start, end, data))
       continue;
     if (data.size() <= 0)
       continue;
@@ -744,42 +747,25 @@ PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iS
       Json::Value buffer = data[index];
       int iChannelId = buffer["Id"].asInt();
       Json::Value entries = buffer["Entries"];
-      EPG_TAG epg;
 
       for (unsigned int i = 0; i < entries.size(); ++i)
       {
         Json::Value entry = entries[i];
-        memset(&epg, 0, sizeof(EPG_TAG));
 
-        epg.iUniqueBroadcastId = IsSupported("broadway")
+        kodi::addon::PVREPGTag epg;
+
+        epg.SetUniqueBroadcastId(IsSupported("broadway")
                                      ? entry["Id"].asUInt()
-                                     : GetEventId((long long)entry["Id"].asDouble());
-        epg.strTitle = entry["Title"].asCString();
-        epg.iUniqueChannelId = iChannelId;
-        epg.startTime = static_cast<time_t>(entry["StartTime"].asDouble() / 1000);
-        epg.endTime = static_cast<time_t>(entry["EndTime"].asDouble() / 1000);
-        epg.strPlotOutline = entry["LongDescription"].asCString();
-        epg.strPlot = entry["ShortDescription"].asCString();
-        epg.strOriginalTitle = NULL; // unused
-        epg.strCast = NULL; // unused
-        epg.strDirector = NULL; // unused
-        epg.strWriter = NULL; // unused
-        epg.iYear = 0; // unused
-        epg.strIMDBNumber = NULL; // unused
-        epg.strIconPath = ""; // unused
-        epg.iGenreType = 0; // unused
-        epg.iGenreSubType = 0; // unused
-        epg.strGenreDescription = "";
-        epg.strFirstAired = ""; // unused
-        epg.iParentalRating = 0; // unused
-        epg.iStarRating = 0; // unused
-        epg.iSeriesNumber = EPG_TAG_INVALID_SERIES_EPISODE; // unused
-        epg.iEpisodeNumber = EPG_TAG_INVALID_SERIES_EPISODE; // unused
-        epg.iEpisodePartNumber = EPG_TAG_INVALID_SERIES_EPISODE; // unused
-        epg.strEpisodeName = ""; // unused
-        epg.iFlags = EPG_TAG_FLAG_UNDEFINED;
+                                     : GetEventId((long long)entry["Id"].asDouble()));
+        epg.SetTitle(entry["Title"].asCString());
+        epg.SetUniqueChannelId(iChannelId);
+        epg.SetStartTime(static_cast<time_t>(entry["StartTime"].asDouble() / 1000));
+        epg.SetEndTime(static_cast<time_t>(entry["EndTime"].asDouble() / 1000));
+        epg.SetPlotOutline(entry["LongDescription"].asCString());
+        epg.SetPlot(entry["ShortDescription"].asCString());
+        epg.SetFlags(EPG_TAG_FLAG_UNDEFINED);
 
-        PVR->TransferEpgEntry(handle, &epg);
+        results.Add(epg);
       }
     }
 
@@ -799,11 +785,11 @@ bool Pctv::GetEPG(int id, time_t iStart, time_t iEnd, Json::Value& data)
   int retval = RESTGetEpg(id, iStart, iEnd, data);
   if (retval < 0)
   {
-    XBMC->Log(LOG_ERROR, "No EPG data retrieved.");
+    kodi::Log(ADDON_LOG_ERROR, "No EPG data retrieved.");
     return false;
   }
 
-  XBMC->Log(LOG_INFO, "EPG Loaded.");
+  kodi::Log(ADDON_LOG_INFO, "EPG Loaded.");
   return true;
 }
 
@@ -827,22 +813,22 @@ int Pctv::RESTGetEpg(int id, time_t iStart, time_t iEnd, Json::Value& response)
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+      kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
       return -1;
     }
   }
   else
   {
-    XBMC->Log(LOG_DEBUG, "Request EPG failed. Return value: %i\n", retval);
+    kodi::Log(ADDON_LOG_DEBUG, "Request EPG failed. Return value: %i\n", retval);
   }
 
   return retval;
 }
 
 
-std::string Pctv::GetPreviewParams(ADDON_HANDLE handle, Json::Value entry)
+std::string Pctv::GetPreviewParams(int dataIdentifier, Json::Value entry)
 {
-  std::string strStid = GetStid(handle->dataIdentifier);
+  std::string strStid = GetStid(dataIdentifier);
   std::string strTmp;
   if (entry["File"].isString())
   { // Gallery entry
@@ -941,22 +927,57 @@ bool Pctv::GetFreeConfig()
   return false;
 }
 
-const char* Pctv::GetBackendName()
+PVR_ERROR Pctv::GetCapabilities(kodi::addon::PVRCapabilities& capabilities)
 {
-  return m_strBackendName.c_str();
+  capabilities.SetSupportsEPG(true);
+  capabilities.SetSupportsTV(true);
+  capabilities.SetSupportsRadio(false);
+  capabilities.SetSupportsChannelGroups(true);
+  capabilities.SetSupportsRecordings(true);
+  capabilities.SetSupportsRecordingsUndelete(false);
+  capabilities.SetSupportsTimers(true);
+  capabilities.SetSupportsChannelScan(false);
+  capabilities.SetHandlesInputStream(false);
+  capabilities.SetHandlesDemuxing(false);
+  capabilities.SetSupportsLastPlayedPosition(false);
+  capabilities.SetSupportsRecordingsRename(false);
+  capabilities.SetSupportsRecordingsLifetimeChange(false);
+  capabilities.SetSupportsDescrambleInfo(false);
+
+  return PVR_ERROR_NO_ERROR;
 }
 
-const char* Pctv::GetBackendVersion()
+PVR_ERROR Pctv::GetBackendName(std::string& name)
 {
-  return m_strBackendVersion.c_str();
+  name = m_strBackendName;
+  return PVR_ERROR_NO_ERROR;
 }
 
-bool Pctv::GetChannel(const PVR_CHANNEL& channel, PctvChannel& myChannel)
+PVR_ERROR Pctv::GetBackendVersion(std::string& version)
+{
+  version = m_strBackendVersion;
+  return PVR_ERROR_NO_ERROR;
+}
+
+PVR_ERROR Pctv::GetConnectionString(std::string& connection)
+{
+  connection =
+      StringUtils::Format("%s%s", m_strHostname.c_str(), IsConnected() ? "" : " (Not connected!)");
+  return PVR_ERROR_NO_ERROR;
+}
+
+PVR_ERROR Pctv::GetBackendHostname(std::string& hostname)
+{
+  hostname = m_strHostname;
+  return PVR_ERROR_NO_ERROR;
+}
+
+bool Pctv::GetChannel(const kodi::addon::PVRChannel& channel, PctvChannel& myChannel)
 {
   for (unsigned int iChannelPtr = 0; iChannelPtr < m_channels.size(); iChannelPtr++)
   {
     PctvChannel& thisChannel = m_channels.at(iChannelPtr);
-    if (thisChannel.iUniqueId == (int)channel.iUniqueId)
+    if (thisChannel.iUniqueId == (int)channel.GetUniqueId())
     {
       myChannel.iUniqueId = thisChannel.iUniqueId;
       myChannel.bRadio = thisChannel.bRadio;
@@ -971,12 +992,6 @@ bool Pctv::GetChannel(const PVR_CHANNEL& channel, PctvChannel& myChannel)
 
   return false;
 }
-
-unsigned int Pctv::GetChannelsAmount()
-{
-  return m_channels.size();
-}
-
 
 bool Pctv::IsRecordFolderSet(std::string& partitionId)
 {
@@ -998,10 +1013,9 @@ bool Pctv::IsRecordFolderSet(std::string& partitionId)
   return false;
 }
 
-
 int Pctv::RESTGetFolder(Json::Value& response)
 {
-  XBMC->Log(LOG_DEBUG, "%s - get folder config via REST interface", __FUNCTION__);
+  kodi::Log(ADDON_LOG_DEBUG, "%s - get folder config via REST interface", __func__);
 
   cRest rest;
   std::string strUrl = m_strBaseUrl + URI_REST_FOLDER;
@@ -1014,13 +1028,13 @@ int Pctv::RESTGetFolder(Json::Value& response)
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+      kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
       return -1;
     }
   }
   else
   {
-    XBMC->Log(LOG_DEBUG, "Request folder data failed. Return value: %i\n", retval);
+    kodi::Log(ADDON_LOG_DEBUG, "Request folder data failed. Return value: %i\n", retval);
   }
 
   return retval;
@@ -1028,7 +1042,7 @@ int Pctv::RESTGetFolder(Json::Value& response)
 
 int Pctv::RESTGetStorage(Json::Value& response)
 {
-  XBMC->Log(LOG_DEBUG, "%s - get storage data via REST interface", __FUNCTION__);
+  kodi::Log(ADDON_LOG_DEBUG, "%s - get storage data via REST interface", __func__);
 
   cRest rest;
   std::string strUrl = m_strBaseUrl + URI_REST_STORAGE;
@@ -1041,20 +1055,26 @@ int Pctv::RESTGetStorage(Json::Value& response)
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+      kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
       return -1;
     }
   }
   else
   {
-    XBMC->Log(LOG_DEBUG, "Request storage data failed. Return value: %i\n", retval);
+    kodi::Log(ADDON_LOG_DEBUG, "Request storage data failed. Return value: %i\n", retval);
   }
 
   return retval;
 }
 
-PVR_ERROR Pctv::GetStorageInfo(long long* total, long long* used)
+PVR_ERROR Pctv::GetDriveSpace(uint64_t& total, uint64_t& used)
 {
+  if (!IsConnected())
+    return PVR_ERROR_SERVER_ERROR;
+
+  if (!IsSupported("storage"))
+    return PVR_ERROR_NOT_IMPLEMENTED;
+
   m_partitions.clear();
   std::string strPartitionId = "";
 
@@ -1067,7 +1087,7 @@ PVR_ERROR Pctv::GetStorageInfo(long long* total, long long* used)
     int retval = RESTGetStorage(data); // get storage data
     if (retval <= 0)
     {
-      XBMC->Log(LOG_ERROR, "No storage available.");
+      kodi::Log(ADDON_LOG_ERROR, "No storage available.");
       return PVR_ERROR_SERVER_ERROR;
     }
 
@@ -1094,12 +1114,12 @@ PVR_ERROR Pctv::GetStorageInfo(long long* total, long long* used)
             uint32_t size = partition["Size"].asUInt();
             uint32_t available = partition["Available"].asUInt();
 
-            *total = size;
-            *used = (size - available);
+            total = size;
+            used = (size - available);
 
             /* Convert from kBytes to Bytes */
-            *total *= 1024;
-            *used *= 1024;
+            total *= 1024;
+            used *= 1024;
             return PVR_ERROR_NO_ERROR;
           }
         }
@@ -1110,38 +1130,6 @@ PVR_ERROR Pctv::GetStorageInfo(long long* total, long long* used)
   return PVR_ERROR_SERVER_ERROR;
 }
 
-
-bool Pctv::replace(std::string& str, const std::string& from, const std::string& to)
-{
-  size_t start_pos = str.find(from);
-  if (start_pos == std::string::npos)
-    return false;
-
-  str.replace(start_pos, from.length(), to);
-  return true;
-}
-
-
-int Pctv::ReadLiveStream(unsigned char* pBuffer, unsigned int iBufferSize)
-{
-  return 0;
-}
-
-long long Pctv::SeekLiveStream(long long iPosition, int iWhence /* = SEEK_SET */)
-{
-  return 0;
-}
-
-long long Pctv::PositionLiveStream(void)
-{
-  return 0;
-}
-
-long long Pctv::LengthLiveStream(void)
-{
-  return 0;
-}
-
 /* ################ misc ################ */
 
 /*
@@ -1150,7 +1138,7 @@ long long Pctv::LengthLiveStream(void)
 */
 int Pctv::RESTGetChannelList(int id, Json::Value& response)
 {
-  XBMC->Log(LOG_DEBUG, "%s - get channel list entries via REST interface", __FUNCTION__);
+  kodi::Log(ADDON_LOG_DEBUG, "%s - get channel list entries via REST interface", __func__);
   int retval = -1;
   cRest rest;
 
@@ -1166,13 +1154,13 @@ int Pctv::RESTGetChannelList(int id, Json::Value& response)
       }
       else
       {
-        XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+        kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
         return -1;
       }
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Request Channel List failed. Return value: %i\n", retval);
+      kodi::Log(ADDON_LOG_DEBUG, "Request Channel List failed. Return value: %i\n", retval);
     }
   }
   else if (id > 0)
@@ -1189,13 +1177,13 @@ int Pctv::RESTGetChannelList(int id, Json::Value& response)
       }
       else
       {
-        XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::objectValue\n");
+        kodi::Log(ADDON_LOG_DEBUG, "Unknown response format. Expected Json::objectValue\n");
         return -1;
       }
     }
     else
     {
-      XBMC->Log(LOG_DEBUG, "Request Channel List failed. Return value: %i\n", retval);
+      kodi::Log(ADDON_LOG_DEBUG, "Request Channel List failed. Return value: %i\n", retval);
     }
   }
 

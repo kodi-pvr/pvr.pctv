@@ -11,13 +11,13 @@ include_directories(${JSONCPP_INCLUDE_DIRS}
 
 set(DEPLIBS ${JSONCPP_LIBRARIES})
 
-set(PCTV_SOURCES src/client.cpp
+set(PCTV_SOURCES src/addon.cpp
                  src/md5.cpp
                  src/PctvData.cpp
                  src/rest.cpp
                  src/utils.cpp)
 
-set(PCTV_HEADERS src/client.h
+set(PCTV_HEADERS src/addon.h
                  src/md5.h
                  src/PctvData.h
                  src/rest.h

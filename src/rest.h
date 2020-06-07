@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "client.h"
-
 #include <json/json.h>
 #include <string>
 
