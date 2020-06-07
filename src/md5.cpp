@@ -8,7 +8,7 @@
 
 #include "md5.h"
 
-#include <p8-platform/util/StringUtils.h>
+#include "utils.h"
 
 typedef unsigned char md5byte;
 

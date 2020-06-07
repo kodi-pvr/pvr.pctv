@@ -87,7 +87,6 @@ int httpRequest(const std::string& command,
                 const bool write,
                 std::string& json_response)
 {
-  //P8PLATFORM::CLockObject critsec(communication_mutex);
   std::string strUrl = command;
 
   if (write)

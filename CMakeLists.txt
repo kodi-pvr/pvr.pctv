@@ -4,25 +4,24 @@ project(pvr.pctv)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 
 find_package(Kodi REQUIRED)
-find_package(p8-platform REQUIRED)
 find_package(JsonCpp REQUIRED)
 
-include_directories(${p8-platform_INCLUDE_DIRS}
-                    ${JSONCPP_INCLUDE_DIRS}
+include_directories(${JSONCPP_INCLUDE_DIRS}
                     ${KODI_INCLUDE_DIR}/..) # Hack way with "/..", need bigger Kodi cmake rework to match right include ways
 
-set(DEPLIBS ${p8-platform_LIBRARIES}
-            ${JSONCPP_LIBRARIES})
+set(DEPLIBS ${JSONCPP_LIBRARIES})
 
 set(PCTV_SOURCES src/client.cpp
                  src/md5.cpp
                  src/PctvData.cpp
-                 src/rest.cpp)
+                 src/rest.cpp
+                 src/utils.cpp)
 
 set(PCTV_HEADERS src/client.h
                  src/md5.h
                  src/PctvData.h
-                 src/rest.h)
+                 src/rest.h
+                 src/utils.h)
 
 # To prevent build exit on deprecated warnings (from JsonCpp)
 if(WIN32)

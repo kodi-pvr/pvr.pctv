@@ -12,9 +12,12 @@
 #include "client.h"
 #include "rest.h"
 
-#include "p8-platform/threads/threads.h"
 //#include "tinyxml/tinyxml.h"
+#include <atomic>
+#include <condition_variable>
 #include <json/json.h>
+#include <mutex>
+#include <thread>
 
 #define PCTV_REST_INTERFACE false
 
@@ -143,7 +146,7 @@ struct PctvConfig
   }
 };
 
-class Pctv : public P8PLATFORM::CThread
+class Pctv
 {
 public:
   /* Class interface */
@@ -234,11 +237,13 @@ private:
   std::string GetChannelLogo(Json::Value entry);
   std::string GetShortName(Json::Value entry);
 
-  void* Process(void);
+  void Process();
 
   // members
-  P8PLATFORM::CMutex m_mutex;
-  P8PLATFORM::CCondition<bool> m_started;
+  std::thread m_thread;
+  std::mutex m_mutex;
+  std::condition_variable m_started;
+  std::atomic<bool> m_running = {false};
 
   bool m_bIsConnected;
   std::string m_strHostname;

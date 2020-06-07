@@ -10,14 +10,13 @@
 
 #include "client.h"
 #include "md5.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <p8-platform/util/StringUtils.h>
 #include <string>
-
 
 #define URI_REST_CONFIG "/TVC/free/data/config"
 #define URI_REST_CHANNELS "/TVC/user/data/tv/channels"
@@ -38,7 +37,6 @@
 
 using namespace std;
 using namespace ADDON;
-using namespace P8PLATFORM;
 
 
 /************************************************************/
@@ -62,21 +60,23 @@ Pctv::Pctv()
   m_strBackendUrlNoAuth = StringUtils::Format("http://%s:%u", g_strHostname.c_str(), m_iPortWeb);
 }
 
-void* Pctv::Process()
+void Pctv::Process()
 {
   XBMC->Log(LOG_DEBUG, "%s - starting", __FUNCTION__);
 
-  CLockObject lock(m_mutex);
-  m_started.Broadcast();
+  std::lock_guard<std::mutex> lock(m_mutex);
+  m_started.notify_all();
 
-  return NULL;
+  return;
 }
 
 Pctv::~Pctv()
 {
-  CLockObject lock(m_mutex);
+  std::lock_guard<std::mutex> lock(m_mutex);
   XBMC->Log(LOG_DEBUG, "%s Stopping update thread...", __FUNCTION__);
-  StopThread();
+  m_running = false;
+  if (m_thread.joinable())
+    m_thread.join();
 
   XBMC->Log(LOG_DEBUG, "%s Removing internal channels list...", __FUNCTION__);
   m_channels.clear();
@@ -90,7 +90,7 @@ Pctv::~Pctv()
 
 bool Pctv::Open()
 {
-  CLockObject lock(m_mutex);
+  std::lock_guard<std::mutex> lock(m_mutex);
 
   XBMC->Log(LOG_INFO, "%s - PCTV Systems Addon Configuration options", __FUNCTION__);
   XBMC->Log(LOG_INFO, "%s - Hostname: '%s'", __FUNCTION__, g_strHostname.c_str());
@@ -113,7 +113,7 @@ bool Pctv::Open()
   if (m_bUsePIN)
   {
     std::string pinMD5 = XBMC_MD5::GetMD5(g_strPin);
-    StringUtils::ToLower(pinMD5);
+    std::transform(pinMD5.begin(), pinMD5.end(), pinMD5.begin(), ::tolower);
 
     strURL = StringUtils::Format("User:%s@", pinMD5.c_str());
 
@@ -145,9 +145,10 @@ bool Pctv::Open()
   }
 
   XBMC->Log(LOG_INFO, "%s Starting separate client update thread...", __FUNCTION__);
-  CreateThread();
+  m_running = true;
+  m_thread = std::thread([&] { Process(); });
 
-  return IsRunning();
+  return m_running;
 }
 
 void Pctv::CloseLiveStream(void)
@@ -700,7 +701,7 @@ int Pctv::RESTAddTimer(const PVR_TIMER& timer, Json::Value& response)
   if (timer.startTime <= 0)
   {
     // Refresh the recordings
-    usleep(100000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     PVR->TriggerRecordingUpdate();
   }
 
@@ -909,7 +910,7 @@ std::string Pctv::GetShortName(Json::Value entry)
     {
       strShortName = entry["Name"].asString();
     }
-    StringUtils::Replace(strShortName, " ", "_");
+    std::replace(strShortName.begin(), strShortName.end(), ' ', '_');
   }
 
   return strShortName;

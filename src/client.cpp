@@ -10,11 +10,10 @@
 #include "client.h"
 
 #include "PctvData.h"
+#include "utils.h"
 
 #include "kodi/xbmc_pvr_dll.h"
-#include "p8-platform/util/util.h"
 
-#include <p8-platform/util/StringUtils.h>
 #include <stdlib.h>
 
 #if defined(TARGET_WINDOWS) && defined(CreateDirectory)
@@ -146,7 +145,8 @@ extern "C"
     XBMC = new CHelper_libXBMC_addon;
     if (!XBMC->RegisterMe(hdl))
     {
-      SAFE_DELETE(XBMC);
+      delete XBMC;
+      XBMC = nullptr;
       return ADDON_STATUS_PERMANENT_FAILURE;
     }
 
@@ -155,8 +155,10 @@ extern "C"
     PVR = new CHelper_libXBMC_pvr;
     if (!PVR->RegisterMe(hdl))
     {
-      SAFE_DELETE(PVR);
-      SAFE_DELETE(XBMC);
+      delete PVR;
+      PVR = nullptr;
+      delete XBMC;
+      XBMC = nullptr;
       return ADDON_STATUS_PERMANENT_FAILURE;
     }
 
@@ -176,9 +178,12 @@ extern "C"
 
     if (!PctvData->Open())
     {
-      SAFE_DELETE(PctvData);
-      SAFE_DELETE(PVR);
-      SAFE_DELETE(XBMC);
+      delete PctvData;
+      PctvData = nullptr;
+      delete PVR;
+      PVR = nullptr;
+      delete XBMC;
+      XBMC = nullptr;
       m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
       return m_CurStatus;
     }
@@ -204,9 +209,12 @@ extern "C"
       m_bCreated = false;
     }
 
-    SAFE_DELETE(PctvData);
-    SAFE_DELETE(PVR);
-    SAFE_DELETE(XBMC);
+    delete PctvData;
+    PctvData = nullptr;
+    delete PVR;
+    PVR = nullptr;
+    delete XBMC;
+    XBMC = nullptr;
 
     m_CurStatus = ADDON_STATUS_UNKNOWN;
   }
