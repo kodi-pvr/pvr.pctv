@@ -9,60 +9,60 @@
 #include "PctvData.h"
 
 #include "client.h"
-
-#include <p8-platform/util/StringUtils.h>
-
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <map>
-
 #include "md5.h"
 
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <p8-platform/util/StringUtils.h>
+#include <string>
 
 
-#define URI_REST_CONFIG         "/TVC/free/data/config"
-#define URI_REST_CHANNELS       "/TVC/user/data/tv/channels"
-#define URI_REST_CHANNELLISTS   "/TVC/user/data/tv/channellists"
-#define URI_REST_RECORDINGS     "/TVC/user/data/gallery/video"
-#define URI_REST_TIMER          "/TVC/user/data/recordingtasks"
-#define URI_REST_EPG            "/TVC/user/data/epg"
-#define URI_REST_STORAGE        "/TVC/user/data/storage"
-#define URI_REST_FOLDER	        "/TVC/user/data/folder"
+#define URI_REST_CONFIG "/TVC/free/data/config"
+#define URI_REST_CHANNELS "/TVC/user/data/tv/channels"
+#define URI_REST_CHANNELLISTS "/TVC/user/data/tv/channellists"
+#define URI_REST_RECORDINGS "/TVC/user/data/gallery/video"
+#define URI_REST_TIMER "/TVC/user/data/recordingtasks"
+#define URI_REST_EPG "/TVC/user/data/epg"
+#define URI_REST_STORAGE "/TVC/user/data/storage"
+#define URI_REST_FOLDER "/TVC/user/data/folder"
 
-#define DEFAULT_TV_PIN          "0000"
+#define DEFAULT_TV_PIN "0000"
 
-#define URI_INDEX_HTML			"/TVC/common/Login.html"
+#define URI_INDEX_HTML "/TVC/common/Login.html"
 
-#define DEFAULT_PREVIEW_MODE    "m2ts"
-#define DEFAULT_PROFILE         "m2ts.Native.NR"
-#define DEFAULT_REC_PROFILE     "m2ts.4000k.HR"
+#define DEFAULT_PREVIEW_MODE "m2ts"
+#define DEFAULT_PROFILE "m2ts.Native.NR"
+#define DEFAULT_REC_PROFILE "m2ts.4000k.HR"
 
 using namespace std;
 using namespace ADDON;
 using namespace P8PLATFORM;
 
 
-
 /************************************************************/
 /** Class interface */
 
-Pctv::Pctv() :m_strBaseUrl(""), m_strStid(""), m_strPreviewMode(DEFAULT_PREVIEW_MODE), m_config({ "", "", "", 0, "" })
-{   
-  m_bIsConnected = false;      
-  m_bUpdating = false;  
+Pctv::Pctv()
+  : m_strBaseUrl(""),
+    m_strStid(""),
+    m_strPreviewMode(DEFAULT_PREVIEW_MODE),
+    m_config({"", "", "", 0, ""})
+{
+  m_bIsConnected = false;
+  m_bUpdating = false;
   m_iNumChannels = 0;
-  m_iNumRecordings = 0;  
-  m_iNumGroups = 0;  
+  m_iNumRecordings = 0;
+  m_iNumGroups = 0;
   m_iBitrate = g_iBitrate;
   m_bTranscode = g_bTranscode;
   m_bUsePIN = g_bUsePIN;
-  m_iPortWeb = g_iPortWeb;     
-  m_strBackendUrlNoAuth= StringUtils::Format("http://%s:%u", g_strHostname.c_str(), m_iPortWeb);
+  m_iPortWeb = g_iPortWeb;
+  m_strBackendUrlNoAuth = StringUtils::Format("http://%s:%u", g_strHostname.c_str(), m_iPortWeb);
 }
 
-void  *Pctv::Process()
+void* Pctv::Process()
 {
   XBMC->Log(LOG_DEBUG, "%s - starting", __FUNCTION__);
 
@@ -86,7 +86,6 @@ Pctv::~Pctv()
   m_timer.clear();
   m_partitions.clear();
   m_bIsConnected = false;
-  
 }
 
 bool Pctv::Open()
@@ -96,50 +95,55 @@ bool Pctv::Open()
   XBMC->Log(LOG_INFO, "%s - PCTV Systems Addon Configuration options", __FUNCTION__);
   XBMC->Log(LOG_INFO, "%s - Hostname: '%s'", __FUNCTION__, g_strHostname.c_str());
   XBMC->Log(LOG_INFO, "%s - WebPort: '%d'", __FUNCTION__, m_iPortWeb);
-    
+
   m_bIsConnected = GetFreeConfig();
 
   if (!m_bIsConnected)
   {
-    XBMC->Log(LOG_ERROR, "%s It seem's that pctv cannot be reached. Make sure that you set the correct configuration options in the addon settings!", __FUNCTION__);
+    XBMC->Log(LOG_ERROR,
+              "%s It seem's that pctv cannot be reached. Make sure that you set the correct "
+              "configuration options in the addon settings!",
+              __FUNCTION__);
     return false;
   }
- 
-  // add user:pin in front of the URL if PIN is set  
+
+  // add user:pin in front of the URL if PIN is set
   std::string strURL = "";
   std::string strAuth = "";
   if (m_bUsePIN)
   {
-	  std::string pinMD5 = XBMC_MD5::GetMD5(g_strPin);
-	  StringUtils::ToLower(pinMD5);
+    std::string pinMD5 = XBMC_MD5::GetMD5(g_strPin);
+    StringUtils::ToLower(pinMD5);
 
-	  strURL= StringUtils::Format("User:%s@", pinMD5.c_str());
+    strURL = StringUtils::Format("User:%s@", pinMD5.c_str());
 
-	  if (IsSupported("broadway"))
-	  {
-		  strAuth = "/basicauth";
-	  }
+    if (IsSupported("broadway"))
+    {
+      strAuth = "/basicauth";
+    }
   }
 
-  strURL= StringUtils::Format("http://%s%s:%u%s", strURL.c_str(), g_strHostname.c_str(), m_iPortWeb, strAuth.c_str());
+  strURL = StringUtils::Format("http://%s%s:%u%s", strURL.c_str(), g_strHostname.c_str(),
+                               m_iPortWeb, strAuth.c_str());
   m_strBaseUrl = strURL;
 
   // request index.html to force wake-up from standby
-  if (IsSupported("broadway")) {
-	  int retval;
-	  cRest rest;
-	  Json::Value response;  
+  if (IsSupported("broadway"))
+  {
+    int retval;
+    cRest rest;
+    Json::Value response;
 
-	  std::string strUrl = m_strBaseUrl + URI_INDEX_HTML;
-	  retval = rest.Get(strUrl, "", response);
+    std::string strUrl = m_strBaseUrl + URI_INDEX_HTML;
+    retval = rest.Get(strUrl, "", response);
   }
 
   if (m_channels.size() == 0)
   {
     // Load the TV channels
-	LoadChannels();    
-  }  
-    
+    LoadChannels();
+  }
+
   XBMC->Log(LOG_INFO, "%s Starting separate client update thread...", __FUNCTION__);
   CreateThread();
 
@@ -148,12 +152,12 @@ bool Pctv::Open()
 
 void Pctv::CloseLiveStream(void)
 {
-  XBMC->Log(LOG_DEBUG, "CloseLiveStream");  
+  XBMC->Log(LOG_DEBUG, "CloseLiveStream");
 }
 
 /************************************************************/
 /** Channels  */
-PVR_ERROR Pctv::GetChannels(ADDON_HANDLE handle, bool bRadio) 
+PVR_ERROR Pctv::GetChannels(ADDON_HANDLE handle, bool bRadio)
 {
   XBMC->Log(LOG_DEBUG, "%s", __FUNCTION__);
   m_iNumChannels = 0;
@@ -168,48 +172,51 @@ PVR_ERROR Pctv::GetChannels(ADDON_HANDLE handle, bool bRadio)
     XBMC->Log(LOG_ERROR, "No channels available.");
     return PVR_ERROR_SERVER_ERROR;
   }
-  
+
   for (unsigned int index = 0; index < data.size(); ++index)
   {
     PctvChannel channel;
     Json::Value entry;
 
     entry = data[index];
-    
+
     channel.iUniqueId = entry["Id"].asInt();
-    channel.strChannelName = entry["DisplayName"].asString();    
-	if (entry["MajorChannelNo"] != Json::nullValue)
-	{
-		channel.iChannelNumber = entry["MajorChannelNo"].asInt();
-	}	
-	else 
-	{
-		channel.iChannelNumber = entry["Id"].asInt();
-	}
-	if (entry["MinorChannelNo"] != Json::nullValue)
-	{
-		channel.iSubChannelNumber = entry["MinorChannelNo"].asInt();
-	}
-	else {
-		channel.iSubChannelNumber = 0;
-	}
-	channel.iEncryptionSystem = 0;	
+    channel.strChannelName = entry["DisplayName"].asString();
+    if (entry["MajorChannelNo"] != Json::nullValue)
+    {
+      channel.iChannelNumber = entry["MajorChannelNo"].asInt();
+    }
+    else
+    {
+      channel.iChannelNumber = entry["Id"].asInt();
+    }
+    if (entry["MinorChannelNo"] != Json::nullValue)
+    {
+      channel.iSubChannelNumber = entry["MinorChannelNo"].asInt();
+    }
+    else
+    {
+      channel.iSubChannelNumber = 0;
+    }
+    channel.iEncryptionSystem = 0;
     std::string params;
     params = GetPreviewParams(handle, entry);
-    channel.strStreamURL = GetPreviewUrl(params);    
+    channel.strStreamURL = GetPreviewUrl(params);
     channel.strLogoPath = GetChannelLogo(entry);
     m_iNumChannels++;
     m_channels.push_back(channel);
-    
-    XBMC->Log(LOG_DEBUG, "%s loaded Channel entry '%s'", __FUNCTION__, channel.strChannelName.c_str());
+
+    XBMC->Log(LOG_DEBUG, "%s loaded Channel entry '%s'", __FUNCTION__,
+              channel.strChannelName.c_str());
   }
-  
-  if (m_channels.size() > 0) {
-	std::sort(m_channels.begin(), m_channels.end());
+
+  if (m_channels.size() > 0)
+  {
+    std::sort(m_channels.begin(), m_channels.end());
   }
-	  
+
   XBMC->QueueNotification(QUEUE_INFO, "%d channels loaded.", m_channels.size());
-  
+
   TransferChannels(handle);
 
   return PVR_ERROR_NO_ERROR;
@@ -221,13 +228,13 @@ void Pctv::TransferChannels(ADDON_HANDLE handle)
   for (unsigned int i = 0; i < m_channels.size(); i++)
   {
     std::string strTmp;
-    PctvChannel &channel = m_channels.at(i);
+    PctvChannel& channel = m_channels.at(i);
     PVR_CHANNEL tag;
     memset(&tag, 0, sizeof(PVR_CHANNEL));
     tag.iUniqueId = channel.iUniqueId;
-	tag.iChannelNumber = channel.iChannelNumber;
-	tag.iSubChannelNumber = channel.iSubChannelNumber;
-	tag.iEncryptionSystem = channel.iEncryptionSystem;	
+    tag.iChannelNumber = channel.iChannelNumber;
+    tag.iSubChannelNumber = channel.iSubChannelNumber;
+    tag.iEncryptionSystem = channel.iEncryptionSystem;
     strncpy(tag.strChannelName, channel.strChannelName.c_str(), sizeof(tag.strChannelName));
     strncpy(tag.strInputFormat, m_strPreviewMode.c_str(), sizeof(tag.strInputFormat));
     strncpy(tag.strIconPath, channel.strLogoPath.c_str(), sizeof(tag.strIconPath));
@@ -240,15 +247,18 @@ bool Pctv::LoadChannels()
 {
   PVR->TriggerChannelGroupsUpdate();
   PVR->TriggerChannelUpdate();
-  return true;  
+  return true;
 }
 
-PVR_ERROR Pctv::GetChannelStreamProperties(const PVR_CHANNEL* channel, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount)
+PVR_ERROR Pctv::GetChannelStreamProperties(const PVR_CHANNEL* channel,
+                                           PVR_NAMED_VALUE* properties,
+                                           unsigned int* iPropertiesCount)
 {
   if (*iPropertiesCount < 2)
     return PVR_ERROR_INVALID_PARAMETERS;
 
-  std:string strUrl;
+std:
+  string strUrl;
   for (const auto& pctvChannel : m_channels)
   {
     if (pctvChannel.iUniqueId == channel->iUniqueId)
@@ -257,12 +267,14 @@ PVR_ERROR Pctv::GetChannelStreamProperties(const PVR_CHANNEL* channel, PVR_NAMED
     }
   }
 
-  if (strUrl.empty()) {
+  if (strUrl.empty())
+  {
     return PVR_ERROR_FAILED;
   }
   strncpy(properties[0].strName, PVR_STREAM_PROPERTY_STREAMURL, sizeof(properties[0].strName) - 1);
   strncpy(properties[0].strValue, strUrl.c_str(), sizeof(properties[0].strValue) - 1);
-  strncpy(properties[1].strName, PVR_STREAM_PROPERTY_ISREALTIMESTREAM, sizeof(properties[1].strName) - 1);
+  strncpy(properties[1].strName, PVR_STREAM_PROPERTY_ISREALTIMESTREAM,
+          sizeof(properties[1].strName) - 1);
   strncpy(properties[1].strValue, "true", sizeof(properties[1].strValue) - 1);
 
   *iPropertiesCount = 2;
@@ -278,7 +290,7 @@ unsigned int Pctv::GetChannelGroupsAmount()
   return m_iNumGroups;
 }
 
-PVR_ERROR Pctv::GetChannelGroups(ADDON_HANDLE handle, bool bRadio) 
+PVR_ERROR Pctv::GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
 {
   m_iNumGroups = 0;
   m_groups.clear();
@@ -294,35 +306,38 @@ PVR_ERROR Pctv::GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
   }
 
   for (unsigned int index = 0; index < data.size(); ++index)
-  { 
+  {
     PctvChannelGroup group;
     Json::Value entry;
 
     entry = data[index];
     int iChannelListId = entry["Id"].asInt();
 
-    Json::Value channellistData;    
+    Json::Value channellistData;
     retval = RESTGetChannelList(iChannelListId, channellistData);
-	if (retval > 0) {
-		Json::Value channels = channellistData["Channels"];
+    if (retval > 0)
+    {
+      Json::Value channels = channellistData["Channels"];
 
-		for (unsigned int i = 0; i < channels.size(); ++i) {
+      for (unsigned int i = 0; i < channels.size(); ++i)
+      {
 
-			Json::Value channel;
+        Json::Value channel;
 
-			channel = channels[i];
-			group.members.push_back(channel["Id"].asInt());
-		}
-	}
-	
+        channel = channels[i];
+        group.members.push_back(channel["Id"].asInt());
+      }
+    }
+
     group.iGroupId = iChannelListId;
     group.strGroupName = entry["DisplayName"].asString();
     group.bRadio = false;
-        
+
     m_groups.push_back(group);
     m_iNumGroups++;
 
-    XBMC->Log(LOG_DEBUG, "%s loaded channelist entry '%s'", __FUNCTION__, group.strGroupName.c_str());
+    XBMC->Log(LOG_DEBUG, "%s loaded channelist entry '%s'", __FUNCTION__,
+              group.strGroupName.c_str());
   }
 
   XBMC->QueueNotification(QUEUE_INFO, "%d groups loaded.", m_groups.size());
@@ -334,40 +349,40 @@ PVR_ERROR Pctv::GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
 
 void Pctv::TransferGroups(ADDON_HANDLE handle)
 {
-  for (unsigned int i = 0; i<m_groups.size(); i++)
+  for (unsigned int i = 0; i < m_groups.size(); i++)
   {
     std::string strTmp;
-    PctvChannelGroup &group = m_groups.at(i);
-  
+    PctvChannelGroup& group = m_groups.at(i);
+
     PVR_CHANNEL_GROUP tag;
     memset(&tag, 0, sizeof(PVR_CHANNEL_GROUP));
     tag.bIsRadio = false;
     tag.iPosition = 0; // groups default order, unused
     strncpy(tag.strGroupName, group.strGroupName.c_str(), sizeof(tag.strGroupName));
-    
+
     PVR->TransferChannelGroup(handle, &tag);
   }
 }
 
-PVR_ERROR Pctv::GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &group)
+PVR_ERROR Pctv::GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP& group)
 {
   std::string strTmp = group.strGroupName;
   for (unsigned int i = 0; i < m_groups.size(); i++)
   {
-    PctvChannelGroup &g = m_groups.at(i);
-    if (!strTmp.compare(g.strGroupName)) 
+    PctvChannelGroup& g = m_groups.at(i);
+    if (!strTmp.compare(g.strGroupName))
     {
-      for (unsigned int i = 0; i<g.members.size(); i++) 
+      for (unsigned int i = 0; i < g.members.size(); i++)
       {
         PVR_CHANNEL_GROUP_MEMBER tag;
         memset(&tag, 0, sizeof(PVR_CHANNEL_GROUP_MEMBER));
 
         tag.iChannelUniqueId = g.members[i];
         strncpy(tag.strGroupName, g.strGroupName.c_str(), sizeof(tag.strGroupName));
-        
+
         PVR->TransferChannelGroupMember(handle, &tag);
-      }      
-    }      
+      }
+    }
   }
 
   return PVR_ERROR_NO_ERROR;
@@ -406,37 +421,40 @@ int Pctv::RESTGetChannelLists(Json::Value& response)
 /** Recordings  */
 
 PVR_ERROR Pctv::GetRecordings(ADDON_HANDLE handle)
-{  
+{
   m_iNumRecordings = 0;
   m_recordings.clear();
 
   Json::Value data;
-  int retval = RESTGetRecordings(data);  
-  if (retval > 0) {
-	for (unsigned int index = 0; index < data["video"].size(); ++index)
-	{
-		PctvRecording recording;
-		//Json::Value entry;
+  int retval = RESTGetRecordings(data);
+  if (retval > 0)
+  {
+    for (unsigned int index = 0; index < data["video"].size(); ++index)
+    {
+      PctvRecording recording;
+      //Json::Value entry;
 
-		//entry = data["video"][index];
-		Json::Value entry(data["video"][index]);
-		recording.strRecordingId = index;
-		recording.strTitle = entry["DisplayName"].asString();
-		recording.startTime = static_cast<time_t>(entry["RecDate"].asDouble() / 1000); // in seconds
-		recording.iDuration = static_cast<time_t>(entry["Duration"].asDouble() / 1000); // in seconds
-		recording.iLastPlayedPosition = static_cast<int>(entry["Resume"].asDouble() / 1000); // in seconds
-		
-		std::string params = GetPreviewParams(handle, entry);
-		recording.strStreamURL = GetPreviewUrl(params);
-		m_iNumRecordings++;
-		m_recordings.push_back(recording);
+      //entry = data["video"][index];
+      Json::Value entry(data["video"][index]);
+      recording.strRecordingId = index;
+      recording.strTitle = entry["DisplayName"].asString();
+      recording.startTime = static_cast<time_t>(entry["RecDate"].asDouble() / 1000); // in seconds
+      recording.iDuration = static_cast<time_t>(entry["Duration"].asDouble() / 1000); // in seconds
+      recording.iLastPlayedPosition =
+          static_cast<int>(entry["Resume"].asDouble() / 1000); // in seconds
 
-		XBMC->Log(LOG_DEBUG, "%s loaded Recording entry '%s'", __FUNCTION__, recording.strTitle.c_str());
-	}
+      std::string params = GetPreviewParams(handle, entry);
+      recording.strStreamURL = GetPreviewUrl(params);
+      m_iNumRecordings++;
+      m_recordings.push_back(recording);
+
+      XBMC->Log(LOG_DEBUG, "%s loaded Recording entry '%s'", __FUNCTION__,
+                recording.strTitle.c_str());
+    }
   }
-  
+
   XBMC->QueueNotification(QUEUE_INFO, "%d recordings loaded.", m_recordings.size());
-  
+
   TransferRecordings(handle);
 
   return PVR_ERROR_NO_ERROR;
@@ -444,21 +462,21 @@ PVR_ERROR Pctv::GetRecordings(ADDON_HANDLE handle)
 
 void Pctv::TransferRecordings(ADDON_HANDLE handle)
 {
-  for (unsigned int i = 0; i<m_recordings.size(); i++)
-  {    
-    PctvRecording &recording = m_recordings.at(i);
+  for (unsigned int i = 0; i < m_recordings.size(); i++)
+  {
+    PctvRecording& recording = m_recordings.at(i);
     PVR_RECORDING tag;
     memset(&tag, 0, sizeof(PVR_RECORDING));
     tag.iSeriesNumber = PVR_RECORDING_INVALID_SERIES_EPISODE;
     tag.iEpisodeNumber = PVR_RECORDING_INVALID_SERIES_EPISODE;
-    strncpy(tag.strRecordingId, recording.strRecordingId.c_str(), sizeof(tag.strRecordingId) -1);
-    strncpy(tag.strTitle, recording.strTitle.c_str(), sizeof(tag.strTitle) -1);
-    strncpy(tag.strPlotOutline, recording.strPlotOutline.c_str(), sizeof(tag.strPlotOutline) -1);
-    strncpy(tag.strPlot, recording.strPlot.c_str(), sizeof(tag.strPlot) -1);
-    strncpy(tag.strChannelName, recording.strChannelName.c_str(), sizeof(tag.strChannelName) -1);
-    strncpy(tag.strIconPath, recording.strIconPath.c_str(), sizeof(tag.strIconPath) -1);
-	recording.strDirectory = "";
-    strncpy(tag.strDirectory, recording.strDirectory.c_str(), sizeof(tag.strDirectory) -1);
+    strncpy(tag.strRecordingId, recording.strRecordingId.c_str(), sizeof(tag.strRecordingId) - 1);
+    strncpy(tag.strTitle, recording.strTitle.c_str(), sizeof(tag.strTitle) - 1);
+    strncpy(tag.strPlotOutline, recording.strPlotOutline.c_str(), sizeof(tag.strPlotOutline) - 1);
+    strncpy(tag.strPlot, recording.strPlot.c_str(), sizeof(tag.strPlot) - 1);
+    strncpy(tag.strChannelName, recording.strChannelName.c_str(), sizeof(tag.strChannelName) - 1);
+    strncpy(tag.strIconPath, recording.strIconPath.c_str(), sizeof(tag.strIconPath) - 1);
+    recording.strDirectory = "";
+    strncpy(tag.strDirectory, recording.strDirectory.c_str(), sizeof(tag.strDirectory) - 1);
     tag.recordingTime = recording.startTime;
     tag.iDuration = recording.iDuration;
 
@@ -481,7 +499,7 @@ int Pctv::RESTGetRecordings(Json::Value& response)
   {
     if (response.type() == Json::objectValue)
     {
-		return response["TotalCount"].asInt();		
+      return response["TotalCount"].asInt();
     }
     else
     {
@@ -497,16 +515,20 @@ int Pctv::RESTGetRecordings(Json::Value& response)
   return retval;
 }
 
-unsigned int Pctv::GetRecordingsAmount() {
+unsigned int Pctv::GetRecordingsAmount()
+{
   return m_iNumRecordings;
 }
 
-PVR_ERROR Pctv::GetRecordingStreamProperties(const PVR_RECORDING* recording, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount)
+PVR_ERROR Pctv::GetRecordingStreamProperties(const PVR_RECORDING* recording,
+                                             PVR_NAMED_VALUE* properties,
+                                             unsigned int* iPropertiesCount)
 {
-  std:string strRecordingFile;
+std:
+  string strRecordingFile;
   for (const auto& PctvRec : m_recordings)
   {
-    if (strcmp(PctvRec.strRecordingId.c_str(), recording->strRecordingId)== 0)
+    if (strcmp(PctvRec.strRecordingId.c_str(), recording->strRecordingId) == 0)
     {
       strRecordingFile = PctvRec.strStreamURL;
     }
@@ -525,16 +547,16 @@ PVR_ERROR Pctv::GetRecordingStreamProperties(const PVR_RECORDING* recording, PVR
 /** Timer */
 
 unsigned int Pctv::GetTimersAmount(void)
-{  
-	return m_timer.size();
+{
+  return m_timer.size();
 }
 
 PVR_ERROR Pctv::GetTimers(ADDON_HANDLE handle)
-{  
+{
   m_timer.clear();
 
   Json::Value data;
-  int retval = RESTGetTimer(data);  
+  int retval = RESTGetTimer(data);
   if (retval < 0)
   {
     XBMC->Log(LOG_ERROR, "No timer available.");
@@ -552,8 +574,8 @@ PVR_ERROR Pctv::GetTimers(ADDON_HANDLE handle)
     timer.startTime = static_cast<time_t>(entry["RealStartTime"].asDouble() / 1000);
     timer.endTime = static_cast<time_t>(entry["RealEndTime"].asDouble() / 1000);
     timer.iStartOffset = entry["StartOffset"].asInt();
-    timer.iEndOffset = entry["EndOffset"].asInt();      
-    
+    timer.iEndOffset = entry["EndOffset"].asInt();
+
     std::string strState = entry["State"].asString();
     if (strState == "Idle" || strState == "Prepared")
     {
@@ -566,19 +588,19 @@ PVR_ERROR Pctv::GetTimers(ADDON_HANDLE handle)
     else if (strState == "Done")
     {
       timer.state = PVR_TIMER_STATE_COMPLETED;
-    }     
+    }
     else
     {
-      timer.state = PVR_TIMER_STATE_NEW;  // default
+      timer.state = PVR_TIMER_STATE_NEW; // default
     }
-	
+
     m_timer.push_back(timer);
 
     XBMC->Log(LOG_DEBUG, "%s loaded Timer entry '%s'", __FUNCTION__, timer.strTitle.c_str());
   }
-  
+
   XBMC->QueueNotification(QUEUE_INFO, "%d timer loaded.", m_timer.size());
-  
+
   TransferTimer(handle);
 
   return PVR_ERROR_NO_ERROR;
@@ -586,10 +608,10 @@ PVR_ERROR Pctv::GetTimers(ADDON_HANDLE handle)
 
 void Pctv::TransferTimer(ADDON_HANDLE handle)
 {
-  for (unsigned int i = 0; i<m_timer.size(); i++)
+  for (unsigned int i = 0; i < m_timer.size(); i++)
   {
     std::string strTmp;
-    PctvTimer &timer = m_timer.at(i);
+    PctvTimer& timer = m_timer.at(i);
     PVR_TIMER tag;
     memset(&tag, 0, sizeof(PVR_TIMER));
 
@@ -638,11 +660,18 @@ int Pctv::RESTGetTimer(Json::Value& response)
 }
 
 
-int Pctv::RESTAddTimer(const PVR_TIMER &timer, Json::Value& response)
-{	
+int Pctv::RESTAddTimer(const PVR_TIMER& timer, Json::Value& response)
+{
   std::string strQueryString;
-  strQueryString= StringUtils::Format("{\"Id\":0,\"ChannelId\":%i,\"State\":\"%s\",\"RealStartTime\":%llu,\"RealEndTime\":%llu,\"StartOffset\":%llu,\"EndOffset\":%llu,\"DisplayName\":\"%s\",\"Recurrence\":%i,\"ChannelListId\":%i,\"Profile\":\"%s\"}",
-	  timer.iClientChannelUid, "Idle", static_cast<unsigned long long>(timer.startTime) * 1000, static_cast<unsigned long long>(timer.endTime) * 1000, static_cast<unsigned long long>(timer.iMarginStart) * 1000, static_cast<unsigned long long>(timer.iMarginEnd) * 1000, timer.strTitle, 0, 0, DEFAULT_REC_PROFILE);
+  strQueryString = StringUtils::Format(
+      "{\"Id\":0,\"ChannelId\":%i,\"State\":\"%s\",\"RealStartTime\":%llu,\"RealEndTime\":%llu,"
+      "\"StartOffset\":%llu,\"EndOffset\":%llu,\"DisplayName\":\"%s\",\"Recurrence\":%i,"
+      "\"ChannelListId\":%i,\"Profile\":\"%s\"}",
+      timer.iClientChannelUid, "Idle", static_cast<unsigned long long>(timer.startTime) * 1000,
+      static_cast<unsigned long long>(timer.endTime) * 1000,
+      static_cast<unsigned long long>(timer.iMarginStart) * 1000,
+      static_cast<unsigned long long>(timer.iMarginEnd) * 1000, timer.strTitle, 0, 0,
+      DEFAULT_REC_PROFILE);
 
   cRest rest;
   std::string strUrl = m_strBaseUrl + URI_REST_TIMER;
@@ -652,20 +681,20 @@ int Pctv::RESTAddTimer(const PVR_TIMER &timer, Json::Value& response)
   {
     if (response.type() == Json::objectValue)
     {
-		retval = 0;
+      retval = 0;
     }
     else
     {
       XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
-	  return -1;
+      return -1;
     }
   }
   else
   {
     XBMC->Log(LOG_DEBUG, "Request Timer failed. Return value: %i\n", retval);
-	return -1;
+    return -1;
   }
-    
+
   // Trigger a timer update to receive new timer from Broadway
   PVR->TriggerTimerUpdate();
   if (timer.startTime <= 0)
@@ -678,19 +707,19 @@ int Pctv::RESTAddTimer(const PVR_TIMER &timer, Json::Value& response)
   return retval;
 }
 
-PVR_ERROR Pctv::AddTimer(const PVR_TIMER &timer) 
+PVR_ERROR Pctv::AddTimer(const PVR_TIMER& timer)
 {
   XBMC->Log(LOG_DEBUG, "AddTimer iClientChannelUid: %i\n", timer.iClientChannelUid);
-  
-  Json::Value data;  
+
+  Json::Value data;
   int retval = RESTAddTimer(timer, data);
-  if (retval == 0) {
-	  return PVR_ERROR_NO_ERROR;
+  if (retval == 0)
+  {
+    return PVR_ERROR_NO_ERROR;
   }
-  
+
   return PVR_ERROR_SERVER_ERROR;
 }
-
 
 
 /************************************************************/
@@ -699,25 +728,31 @@ PVR_ERROR Pctv::AddTimer(const PVR_TIMER &timer)
 PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iStart, time_t iEnd)
 {
   Json::Value data;
-  for (vector<PctvChannel>::iterator myChannel = m_channels.begin(); myChannel < m_channels.end(); ++myChannel)
+  for (vector<PctvChannel>::iterator myChannel = m_channels.begin(); myChannel < m_channels.end();
+       ++myChannel)
   {
-    if (myChannel->iUniqueId != iChannelUid) continue;
-	  if (!GetEPG(iChannelUid, iStart, iEnd, data)) continue;
-    if (data.size() <= 0) continue;
+    if (myChannel->iUniqueId != iChannelUid)
+      continue;
+    if (!GetEPG(iChannelUid, iStart, iEnd, data))
+      continue;
+    if (data.size() <= 0)
+      continue;
 
-    for (unsigned int index = 0; index < data.size(); ++index) 
+    for (unsigned int index = 0; index < data.size(); ++index)
     {
       Json::Value buffer = data[index];
       int iChannelId = buffer["Id"].asInt();
       Json::Value entries = buffer["Entries"];
       EPG_TAG epg;
-      
+
       for (unsigned int i = 0; i < entries.size(); ++i)
       {
         Json::Value entry = entries[i];
         memset(&epg, 0, sizeof(EPG_TAG));
 
-        epg.iUniqueBroadcastId = IsSupported("broadway") ? entry["Id"].asUInt() : GetEventId((long long)entry["Id"].asDouble());
+        epg.iUniqueBroadcastId = IsSupported("broadway")
+                                     ? entry["Id"].asUInt()
+                                     : GetEventId((long long)entry["Id"].asDouble());
         epg.strTitle = entry["Title"].asCString();
         epg.iUniqueChannelId = iChannelId;
         epg.startTime = static_cast<time_t>(entry["StartTime"].asDouble() / 1000);
@@ -747,26 +782,26 @@ PVR_ERROR Pctv::GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iS
       }
     }
 
-	  return PVR_ERROR_NO_ERROR;
+    return PVR_ERROR_NO_ERROR;
   }
-    
+
   return PVR_ERROR_SERVER_ERROR;
 }
 
-unsigned int Pctv::GetEventId(long long EntryId) 
+unsigned int Pctv::GetEventId(long long EntryId)
 {
-	return (unsigned int)((EntryId >> 32) & 0xFFFFFFFFL);
+  return (unsigned int)((EntryId >> 32) & 0xFFFFFFFFL);
 }
 
 bool Pctv::GetEPG(int id, time_t iStart, time_t iEnd, Json::Value& data)
-{   
+{
   int retval = RESTGetEpg(id, iStart, iEnd, data);
   if (retval < 0)
   {
     XBMC->Log(LOG_ERROR, "No EPG data retrieved.");
     return false;
   }
-  
+
   XBMC->Log(LOG_INFO, "EPG Loaded.");
   return true;
 }
@@ -776,8 +811,10 @@ int Pctv::RESTGetEpg(int id, time_t iStart, time_t iEnd, Json::Value& response)
 {
   std::string strParams;
   //strParams= StringUtils::Format("?ids=%d&extended=1&start=%d&end=%d", id, iStart * 1000, iEnd * 1000);
-  strParams= StringUtils::Format("?ids=%d&extended=1&start=%llu&end=%llu", id, static_cast<unsigned long long>(iStart) * 1000, static_cast<unsigned long long>(iEnd) * 1000);
-  
+  strParams = StringUtils::Format("?ids=%d&extended=1&start=%llu&end=%llu", id,
+                                  static_cast<unsigned long long>(iStart) * 1000,
+                                  static_cast<unsigned long long>(iEnd) * 1000);
+
   cRest rest;
   std::string strUrl = m_strBaseUrl + URI_REST_EPG;
   int retval = rest.Get(strUrl, strParams, response);
@@ -803,19 +840,22 @@ int Pctv::RESTGetEpg(int id, time_t iStart, time_t iEnd, Json::Value& response)
 
 
 std::string Pctv::GetPreviewParams(ADDON_HANDLE handle, Json::Value entry)
-{ 
+{
   std::string strStid = GetStid(handle->dataIdentifier);
   std::string strTmp;
   if (entry["File"].isString())
-  {  // Gallery entry
-    strTmp= StringUtils::Format("stid=%s&galleryid=%.0f&file=%s&profile=%s", strStid.c_str(), entry["Id"].asDouble(), URLEncodeInline(entry["File"].asString()).c_str(), GetTranscodeProfileValue().c_str());
+  { // Gallery entry
+    strTmp = StringUtils::Format(
+        "stid=%s&galleryid=%.0f&file=%s&profile=%s", strStid.c_str(), entry["Id"].asDouble(),
+        URLEncodeInline(entry["File"].asString()).c_str(), GetTranscodeProfileValue().c_str());
     return strTmp;
-  }  
-  
+  }
+
   // channel entry
-  strTmp= StringUtils::Format("channel=%i&mode=%s&profile=%s&stid=%s", entry["Id"].asInt(), m_strPreviewMode.c_str(), GetTranscodeProfileValue().c_str(), strStid.c_str());
+  strTmp = StringUtils::Format("channel=%i&mode=%s&profile=%s&stid=%s", entry["Id"].asInt(),
+                               m_strPreviewMode.c_str(), GetTranscodeProfileValue().c_str(),
+                               strStid.c_str());
   return strTmp;
-  
 }
 
 std::string Pctv::GetTranscodeProfileValue()
@@ -823,11 +863,11 @@ std::string Pctv::GetTranscodeProfileValue()
   std::string strProfile;
   if (!m_bTranscode)
   {
-    strProfile= StringUtils::Format("%s.Native.NR", m_strPreviewMode.c_str());
+    strProfile = StringUtils::Format("%s.Native.NR", m_strPreviewMode.c_str());
   }
   else
   {
-    strProfile= StringUtils::Format("%s.%ik.HR", m_strPreviewMode.c_str(), m_iBitrate);
+    strProfile = StringUtils::Format("%s.%ik.HR", m_strPreviewMode.c_str(), m_iBitrate);
   }
 
   return strProfile;
@@ -836,37 +876,42 @@ std::string Pctv::GetTranscodeProfileValue()
 std::string Pctv::GetPreviewUrl(std::string params)
 {
   std::string strTmp;
-  strTmp= StringUtils::Format("%s/TVC/Preview?%s", m_strBaseUrl.c_str(), params.c_str());
+  strTmp = StringUtils::Format("%s/TVC/Preview?%s", m_strBaseUrl.c_str(), params.c_str());
   return strTmp;
 }
 
 std::string Pctv::GetStid(int defaultStid)
-{ 
+{
   if (m_strStid == "")
-  {    
-    m_strStid= StringUtils::Format("_xbmc%i", defaultStid);
+  {
+    m_strStid = StringUtils::Format("_xbmc%i", defaultStid);
   }
-    
+
   return m_strStid;
 }
 
 std::string Pctv::GetChannelLogo(Json::Value entry)
 {
   std::string strNameParam;
-  strNameParam= StringUtils::Format("%s/TVC/Resource?type=1&default=emptyChannelLogo&name=%s", m_strBaseUrl.c_str(), URLEncodeInline(GetShortName(entry)).c_str());
+  strNameParam =
+      StringUtils::Format("%s/TVC/Resource?type=1&default=emptyChannelLogo&name=%s",
+                          m_strBaseUrl.c_str(), URLEncodeInline(GetShortName(entry)).c_str());
   return strNameParam;
 }
 
 std::string Pctv::GetShortName(Json::Value entry)
 {
   std::string strShortName;
-  if (entry["shortName"].isNull()) 
+  if (entry["shortName"].isNull())
   {
     strShortName = entry["DisplayName"].asString();
-    if (strShortName == "") { strShortName = entry["Name"].asString(); }
+    if (strShortName == "")
+    {
+      strShortName = entry["Name"].asString();
+    }
     StringUtils::Replace(strShortName, " ", "_");
   }
-  
+
   return strShortName;
 }
 
@@ -876,7 +921,7 @@ bool Pctv::IsConnected()
 }
 
 bool Pctv::GetFreeConfig()
-{  	
+{
   std::string strConfig = "";
 
   cRest rest;
@@ -886,12 +931,12 @@ bool Pctv::GetFreeConfig()
   if (retval != E_FAILED)
   {
     if (response.type() == Json::objectValue)
-    {      
+    {
       m_config.init(response);
     }
     return true;
   }
-  
+
   return false;
 }
 
@@ -905,11 +950,11 @@ const char* Pctv::GetBackendVersion()
   return m_strBackendVersion.c_str();
 }
 
-bool Pctv::GetChannel(const PVR_CHANNEL &channel, PctvChannel &myChannel)
+bool Pctv::GetChannel(const PVR_CHANNEL& channel, PctvChannel& myChannel)
 {
   for (unsigned int iChannelPtr = 0; iChannelPtr < m_channels.size(); iChannelPtr++)
-  {    
-    PctvChannel &thisChannel = m_channels.at(iChannelPtr);
+  {
+    PctvChannel& thisChannel = m_channels.at(iChannelPtr);
     if (thisChannel.iUniqueId == (int)channel.iUniqueId)
     {
       myChannel.iUniqueId = thisChannel.iUniqueId;
@@ -932,136 +977,141 @@ unsigned int Pctv::GetChannelsAmount()
 }
 
 
-
 bool Pctv::IsRecordFolderSet(std::string& partitionId)
 {
-	Json::Value data;
-	int retval = RESTGetFolder(data); // get folder config
-	if (retval <= 0) return false;
-	
-	for (unsigned int i = 0; i < data.size(); i++)
-	{
-		Json::Value folder = data[i];
-		if (folder["Type"].asString() == "record") { 
-			partitionId = folder["DevicePartitionId"].asString();
-			return true;
-		}
-	}
+  Json::Value data;
+  int retval = RESTGetFolder(data); // get folder config
+  if (retval <= 0)
+    return false;
 
-	return false;
+  for (unsigned int i = 0; i < data.size(); i++)
+  {
+    Json::Value folder = data[i];
+    if (folder["Type"].asString() == "record")
+    {
+      partitionId = folder["DevicePartitionId"].asString();
+      return true;
+    }
+  }
+
+  return false;
 }
 
 
 int Pctv::RESTGetFolder(Json::Value& response)
 {
-	XBMC->Log(LOG_DEBUG, "%s - get folder config via REST interface", __FUNCTION__);
+  XBMC->Log(LOG_DEBUG, "%s - get folder config via REST interface", __FUNCTION__);
 
   cRest rest;
-	std::string strUrl = m_strBaseUrl + URI_REST_FOLDER;
-	int retval = rest.Get(strUrl, "", response);
-	if (retval >= 0)
-	{
-		if (response.type() == Json::arrayValue)
-		{
-			return response.size();
-		}
-		else
-		{
-			XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
-			return -1;
-		}
-	}
-	else
-	{
-		XBMC->Log(LOG_DEBUG, "Request folder data failed. Return value: %i\n", retval);
-	}
+  std::string strUrl = m_strBaseUrl + URI_REST_FOLDER;
+  int retval = rest.Get(strUrl, "", response);
+  if (retval >= 0)
+  {
+    if (response.type() == Json::arrayValue)
+    {
+      return response.size();
+    }
+    else
+    {
+      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+      return -1;
+    }
+  }
+  else
+  {
+    XBMC->Log(LOG_DEBUG, "Request folder data failed. Return value: %i\n", retval);
+  }
 
-	return retval;
+  return retval;
 }
 
 int Pctv::RESTGetStorage(Json::Value& response)
 {
-	XBMC->Log(LOG_DEBUG, "%s - get storage data via REST interface", __FUNCTION__);
+  XBMC->Log(LOG_DEBUG, "%s - get storage data via REST interface", __FUNCTION__);
 
-	cRest rest;
-	std::string strUrl = m_strBaseUrl + URI_REST_STORAGE;
-	int retval = rest.Get(strUrl, "", response);
-	if (retval >= 0)
-	{
-		if (response.type() == Json::arrayValue)
-		{
-			return response.size();
-		}
-		else
-		{
-			XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
-			return -1;
-		}
-	}
-	else
-	{
-		XBMC->Log(LOG_DEBUG, "Request storage data failed. Return value: %i\n", retval);
-	}
-	
-	return retval;
+  cRest rest;
+  std::string strUrl = m_strBaseUrl + URI_REST_STORAGE;
+  int retval = rest.Get(strUrl, "", response);
+  if (retval >= 0)
+  {
+    if (response.type() == Json::arrayValue)
+    {
+      return response.size();
+    }
+    else
+    {
+      XBMC->Log(LOG_DEBUG, "Unknown response format. Expected Json::arrayValue\n");
+      return -1;
+    }
+  }
+  else
+  {
+    XBMC->Log(LOG_DEBUG, "Request storage data failed. Return value: %i\n", retval);
+  }
+
+  return retval;
 }
 
-PVR_ERROR Pctv::GetStorageInfo(long long *total, long long *used)
+PVR_ERROR Pctv::GetStorageInfo(long long* total, long long* used)
 {
-	m_partitions.clear();
-	std::string strPartitionId = "";
-	
-	bool isRecordFolder = IsRecordFolderSet(strPartitionId);
-	
-	if (isRecordFolder) {
-		Json::Value data;
+  m_partitions.clear();
+  std::string strPartitionId = "";
 
-		int retval = RESTGetStorage(data); // get storage data
-		if (retval <= 0)
-		{
-			XBMC->Log(LOG_ERROR, "No storage available.");
-			return PVR_ERROR_SERVER_ERROR;
-		}
+  bool isRecordFolder = IsRecordFolderSet(strPartitionId);
 
-		for (unsigned int i = 0; i < data.size(); i++)
-		{
-			Json::Value storage = data[i];
-			std::string deviceId = storage["Id"].asString();
-			Json::Value devicePartitions = storage["Partitions"];
-			
-			int iCount = devicePartitions.size();
-			if (iCount > 0) {
-				for (int p = 0; p < iCount; p++)
-				{
-					Json::Value partition;
-					partition = devicePartitions[p];
+  if (isRecordFolder)
+  {
+    Json::Value data;
 
-					std::string strDevicePartitionId;
-					strDevicePartitionId= StringUtils::Format("%s.%s", deviceId.c_str(), partition["Id"].asString().c_str());
+    int retval = RESTGetStorage(data); // get storage data
+    if (retval <= 0)
+    {
+      XBMC->Log(LOG_ERROR, "No storage available.");
+      return PVR_ERROR_SERVER_ERROR;
+    }
 
-					if (strDevicePartitionId == strPartitionId)
+    for (unsigned int i = 0; i < data.size(); i++)
+    {
+      Json::Value storage = data[i];
+      std::string deviceId = storage["Id"].asString();
+      Json::Value devicePartitions = storage["Partitions"];
+
+      int iCount = devicePartitions.size();
+      if (iCount > 0)
+      {
+        for (int p = 0; p < iCount; p++)
+        {
+          Json::Value partition;
+          partition = devicePartitions[p];
+
+          std::string strDevicePartitionId;
+          strDevicePartitionId =
+              StringUtils::Format("%s.%s", deviceId.c_str(), partition["Id"].asString().c_str());
+
+          if (strDevicePartitionId == strPartitionId)
           {
-						uint32_t size = partition["Size"].asUInt();
-						uint32_t available = partition["Available"].asUInt();						
+            uint32_t size = partition["Size"].asUInt();
+            uint32_t available = partition["Available"].asUInt();
 
-						*total = size;
-						*used = (size - available);
-						
-						/* Convert from kBytes to Bytes */
-						*total *= 1024;
-						*used *= 1024;
-						return PVR_ERROR_NO_ERROR;
-					}
-				}
-			}
-		}		
-	}
+            *total = size;
+            *used = (size - available);
 
-	return PVR_ERROR_SERVER_ERROR;
+            /* Convert from kBytes to Bytes */
+            *total *= 1024;
+            *used *= 1024;
+            return PVR_ERROR_NO_ERROR;
+          }
+        }
+      }
+    }
+  }
+
+  return PVR_ERROR_SERVER_ERROR;
 }
 
 
-bool Pctv::replace(std::string& str, const std::string& from, const std::string& to) {
+bool Pctv::replace(std::string& str, const std::string& from, const std::string& to)
+{
   size_t start_pos = str.find(from);
   if (start_pos == std::string::npos)
     return false;
@@ -1071,7 +1121,7 @@ bool Pctv::replace(std::string& str, const std::string& from, const std::string&
 }
 
 
-int Pctv::ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize)
+int Pctv::ReadLiveStream(unsigned char* pBuffer, unsigned int iBufferSize)
 {
   return 0;
 }
@@ -1101,12 +1151,12 @@ int Pctv::RESTGetChannelList(int id, Json::Value& response)
 {
   XBMC->Log(LOG_DEBUG, "%s - get channel list entries via REST interface", __FUNCTION__);
   int retval = -1;
-  cRest rest;  
+  cRest rest;
 
   if (id == 0) // all channels
   {
-	  std::string strUrl = m_strBaseUrl + URI_REST_CHANNELS;
-	  retval = rest.Get(strUrl, "?available=1", response);
+    std::string strUrl = m_strBaseUrl + URI_REST_CHANNELS;
+    retval = rest.Get(strUrl, "?available=1", response);
     if (retval >= 0)
     {
       if (response.type() == Json::arrayValue)
@@ -1124,12 +1174,12 @@ int Pctv::RESTGetChannelList(int id, Json::Value& response)
       XBMC->Log(LOG_DEBUG, "Request Channel List failed. Return value: %i\n", retval);
     }
   }
-  else if (id > 0) 
+  else if (id > 0)
   {
     char url[255];
-	sprintf(url, "%s%s/%i", m_strBaseUrl.c_str(), URI_REST_CHANNELLISTS, id);	
-	
-	retval = rest.Get(url, "?available=1", response);
+    sprintf(url, "%s%s/%i", m_strBaseUrl.c_str(), URI_REST_CHANNELLISTS, id);
+
+    retval = rest.Get(url, "?available=1", response);
     if (retval >= 0)
     {
       if (response.type() == Json::objectValue)
@@ -1147,49 +1197,47 @@ int Pctv::RESTGetChannelList(int id, Json::Value& response)
       XBMC->Log(LOG_DEBUG, "Request Channel List failed. Return value: %i\n", retval);
     }
   }
-  
+
   return retval;
 }
 
 bool Pctv::IsSupported(const std::string& cap)
 {
-	return m_config.hasCapability(cap);
+  return m_config.hasCapability(cap);
 }
 
 
-const char SAFE[256] =
-{
-  /*      0 1 2 3  4 5 6 7  8 9 A B  C D E F */
-  /* 0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* 1 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* 2 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* 3 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+const char SAFE[256] = {
+    /*      0 1 2 3  4 5 6 7  8 9 A B  C D E F */
+    /* 0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 1 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 2 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 3 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
 
-  /* 4 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  /* 5 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
-  /* 6 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  /* 7 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+    /* 4 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    /* 5 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+    /* 6 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    /* 7 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
 
-  /* 8 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* 9 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* A */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* B */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 8 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 9 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* A */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* B */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-  /* C */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* D */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* E */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
+    /* C */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* D */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* E */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 
 std::string Pctv::URLEncodeInline(const std::string& sSrc)
 {
   const char DEC2HEX[16 + 1] = "0123456789ABCDEF";
-  const unsigned char * pSrc = (const unsigned char *)sSrc.c_str();
+  const unsigned char* pSrc = (const unsigned char*)sSrc.c_str();
   const int SRC_LEN = sSrc.length();
-  unsigned char * const pStart = new unsigned char[SRC_LEN * 3];
-  unsigned char * pEnd = pStart;
-  const unsigned char * const SRC_END = pSrc + SRC_LEN;
+  unsigned char* const pStart = new unsigned char[SRC_LEN * 3];
+  unsigned char* pEnd = pStart;
+  const unsigned char* const SRC_END = pSrc + SRC_LEN;
 
   for (; pSrc < SRC_END; ++pSrc)
   {
@@ -1204,9 +1252,7 @@ std::string Pctv::URLEncodeInline(const std::string& sSrc)
     }
   }
 
-  std::string sResult((char *)pStart, (char *)pEnd);
+  std::string sResult((char*)pStart, (char*)pEnd);
   delete[] pStart;
   return sResult;
 }
-
-

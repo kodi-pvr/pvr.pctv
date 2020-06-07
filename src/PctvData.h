@@ -11,21 +11,22 @@
 //#include <vector>
 #include "client.h"
 #include "rest.h"
+
 #include "p8-platform/threads/threads.h"
 //#include "tinyxml/tinyxml.h"
 #include <json/json.h>
 
 #define PCTV_REST_INTERFACE false
 
-#define CHANNELDATAVERSION  2
+#define CHANNELDATAVERSION 2
 
 class CCurlFile
 {
 public:
-  CCurlFile(void) {};
-  ~CCurlFile(void) {};
+  CCurlFile(void){};
+  ~CCurlFile(void){};
 
-  bool Get(const std::string &strURL, std::string &strResult);
+  bool Get(const std::string& strURL, std::string& strResult);
 };
 
 typedef enum PCTV_UPDATE_STATE
@@ -39,37 +40,37 @@ typedef enum PCTV_UPDATE_STATE
 
 struct PctvChannel
 {
-  bool        bRadio;
-  int         iUniqueId;
-  int         iChannelNumber;
-  int		  iSubChannelNumber;
-  int         iEncryptionSystem;  
+  bool bRadio;
+  int iUniqueId;
+  int iChannelNumber;
+  int iSubChannelNumber;
+  int iEncryptionSystem;
   std::string strChannelName;
   std::string strLogoPath;
-  std::string strStreamURL;  
+  std::string strStreamURL;
 
-  bool operator < (const PctvChannel& channel) const
+  bool operator<(const PctvChannel& channel) const
   {
-	  return (strChannelName.compare(channel.strChannelName) < 0);
+    return (strChannelName.compare(channel.strChannelName) < 0);
   }
 };
 
 struct PctvChannelGroup
 {
-  bool              bRadio;
-  int               iGroupId;
-  std::string       strGroupName;
-  std::vector<int>  members;
+  bool bRadio;
+  int iGroupId;
+  std::string strGroupName;
+  std::vector<int> members;
 };
 
 struct PctvEpgEntry
 {
-  int         iBroadcastId;
-  int         iChannelId;
-  int         iGenreType;
-  int         iGenreSubType;
-  time_t      startTime;
-  time_t      endTime;
+  int iBroadcastId;
+  int iChannelId;
+  int iGenreType;
+  int iGenreSubType;
+  time_t startTime;
+  time_t endTime;
   std::string strTitle;
   std::string strPlotOutline;
   std::string strPlot;
@@ -79,31 +80,31 @@ struct PctvEpgEntry
 
 struct PctvEpgChannel
 {
-  std::string               strId;
-  std::string               strName;
+  std::string strId;
+  std::string strName;
   std::vector<PctvEpgEntry> epg;
 };
 
 struct PctvTimer
 {
-  int             iId;
-  std::string     strTitle;
-  int             iChannelId;
-  time_t          startTime;
-  time_t          endTime;
-  int             iStartOffset;
-  int             iEndOffset;
-  std::string     strProfile;
-  std::string     strResult;
-  PVR_TIMER_STATE state;  
+  int iId;
+  std::string strTitle;
+  int iChannelId;
+  time_t startTime;
+  time_t endTime;
+  int iStartOffset;
+  int iEndOffset;
+  std::string strProfile;
+  std::string strResult;
+  PVR_TIMER_STATE state;
 };
 
 struct PctvRecording
 {
   std::string strRecordingId;
-  time_t      startTime;
-  int         iDuration;
-  int         iLastPlayedPosition;
+  time_t startTime;
+  int iDuration;
+  int iLastPlayedPosition;
   std::string strTitle;
   std::string strStreamURL;
   std::string strPlot;
@@ -116,29 +117,30 @@ struct PctvRecording
 struct PctvConfig
 {
 
-	std::string Brand;
-	std::string Caps;
-	std::string Hostname;
-	int Port;
-	std::string GuestLink;
+  std::string Brand;
+  std::string Caps;
+  std::string Hostname;
+  int Port;
+  std::string GuestLink;
 
-	void init(const Json::Value& data)
-	{
-		Brand = data["Brand"].asString();
-		Caps = data["Caps"].asString();
-		Hostname = data["Hostname"].asString();
-		Port = data["Port"].asInt();
-		GuestLink = data["GuestLink"].asString();
-	}
-	
-	bool hasCapability(const std::string& cap)
-	{
-		std::string caps = ";" + Caps + ";";
-		if (caps.find(";" + cap + ";") != std::string::npos) {
-			return true;
-		}
-		return false;
-	}
+  void init(const Json::Value& data)
+  {
+    Brand = data["Brand"].asString();
+    Caps = data["Caps"].asString();
+    Hostname = data["Hostname"].asString();
+    Port = data["Port"].asInt();
+    GuestLink = data["GuestLink"].asString();
+  }
+
+  bool hasCapability(const std::string& cap)
+  {
+    std::string caps = ";" + Caps + ";";
+    if (caps.find(";" + cap + ";") != std::string::npos)
+    {
+      return true;
+    }
+    return false;
+  }
 };
 
 class Pctv : public P8PLATFORM::CThread
@@ -149,54 +151,58 @@ public:
   ~Pctv();
 
   /* Server */
-  bool Open();  
+  bool Open();
   bool IsConnected();
-  
+
   /* Common */
   const char* GetBackendName(void);
   const char* GetBackendVersion(void);
-  bool        IsSupported(const std::string& cap);
+  bool IsSupported(const std::string& cap);
 
   /* Channels */
   unsigned int GetChannelsAmount(void);
-  bool GetChannel(const PVR_CHANNEL &channel, PctvChannel &myChannel);
+  bool GetChannel(const PVR_CHANNEL& channel, PctvChannel& myChannel);
   PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio);
-  PVR_ERROR GetChannelStreamProperties(const PVR_CHANNEL* channel, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount);
+  PVR_ERROR GetChannelStreamProperties(const PVR_CHANNEL* channel,
+                                       PVR_NAMED_VALUE* properties,
+                                       unsigned int* iPropertiesCount);
 
   /* Groups */
-  unsigned int GetChannelGroupsAmount(void);  
+  unsigned int GetChannelGroupsAmount(void);
   PVR_ERROR GetChannelGroups(ADDON_HANDLE handle, bool bRadio);
-  PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &group);
+  PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP& group);
 
   /* Recordings */
   PVR_ERROR GetRecordings(ADDON_HANDLE handle);
   bool GetRecordingFromLocation(std::string strRecordingFolder);
   unsigned int GetRecordingsAmount(void);
-  PVR_ERROR GetRecordingStreamProperties(const PVR_RECORDING* recording, PVR_NAMED_VALUE* properties, unsigned int* iPropertiesCount);
+  PVR_ERROR GetRecordingStreamProperties(const PVR_RECORDING* recording,
+                                         PVR_NAMED_VALUE* properties,
+                                         unsigned int* iPropertiesCount);
 
   /* Timer */
   unsigned int GetTimersAmount(void);
   PVR_ERROR GetTimers(ADDON_HANDLE handle);
-  PVR_ERROR AddTimer(const PVR_TIMER &timer);    
+  PVR_ERROR AddTimer(const PVR_TIMER& timer);
 
   /* EPG */
-  PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iStart, time_t iEnd);  
+  PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, int iChannelUid, time_t iStart, time_t iEnd);
   bool GetEPG(int id, time_t iStart, time_t iEnd, Json::Value& data);
-  
+
   /* Preview */
-  const char* GetLiveStreamURL(const PVR_CHANNEL &channelinfo);
+  const char* GetLiveStreamURL(const PVR_CHANNEL& channelinfo);
   void CloseLiveStream();
   long long SeekLiveStream(long long iPosition, int iWhence /* = SEEK_SET */);
   long long PositionLiveStream(void);
   long long LengthLiveStream(void);
-  int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize);
-  
+  int ReadLiveStream(unsigned char* pBuffer, unsigned int iBufferSize);
+
   /* Storage */
-  PVR_ERROR GetStorageInfo(long long *total, long long *used);
-  
+  PVR_ERROR GetStorageInfo(long long* total, long long* used);
+
 private:
-  // helper functions    
-  bool LoadChannels();  
+  // helper functions
+  bool LoadChannels();
   bool GetFreeConfig();
   unsigned int GetEventId(long long EntryId);
   /*
@@ -206,19 +212,19 @@ private:
   int RESTGetChannelList(int id, Json::Value& response);
   int RESTGetRecordings(Json::Value& response);
   int RESTGetChannelLists(Json::Value& response);
-  int RESTGetTimer(Json::Value& response);  
+  int RESTGetTimer(Json::Value& response);
   int RESTGetEpg(int id, time_t iStart, time_t iEnd, Json::Value& response);
   int RESTGetStorage(Json::Value& response);
   int RESTGetFolder(Json::Value& response);
 
-  int RESTAddTimer(const PVR_TIMER &timer, Json::Value& response);  
+  int RESTAddTimer(const PVR_TIMER& timer, Json::Value& response);
 
-  // helper functions    
+  // helper functions
   std::string URLEncodeInline(const std::string& sSrc);
   void TransferChannels(ADDON_HANDLE handle);
   void TransferRecordings(ADDON_HANDLE handle);
-  void TransferTimer(ADDON_HANDLE handle); 
-  void TransferGroups(ADDON_HANDLE handle);  
+  void TransferTimer(ADDON_HANDLE handle);
+  void TransferGroups(ADDON_HANDLE handle);
   bool replace(std::string& str, const std::string& from, const std::string& to);
   bool IsRecordFolderSet(std::string& partitionId);
   std::string GetPreviewParams(ADDON_HANDLE handle, Json::Value entry);
@@ -227,38 +233,35 @@ private:
   std::string GetStid(int id);
   std::string GetChannelLogo(Json::Value entry);
   std::string GetShortName(Json::Value entry);
-  
-  void *Process(void);
-    
+
+  void* Process(void);
+
   // members
-  P8PLATFORM::CMutex                  m_mutex;
-  P8PLATFORM::CCondition<bool>        m_started;
+  P8PLATFORM::CMutex m_mutex;
+  P8PLATFORM::CCondition<bool> m_started;
 
-  bool                              m_bIsConnected;  
-  std::string                       m_strHostname;
-  std::string                       m_strBaseUrl;
-  std::string                       m_strBackendName;
-  std::string                       m_strBackendVersion;
-  PctvConfig                        m_config;
-  int                               m_iBitrate;
-  bool                              m_bTranscode;
-  bool                              m_bUsePIN;
-  int                               m_iPortWeb;    
-  int                               m_iNumChannels;
-  int                               m_iNumRecordings;  
-  int                               m_iNumGroups;  
-  std::string                       m_strPreviewMode;
-  std::string                       m_strStid;
-  bool                              m_bUpdating;  
-  std::string                       m_strBackendUrlNoAuth;
-  
-  std::vector<PctvEpgChannel>       m_epg;    
-  std::vector<PctvChannel>          m_channels;  
-  std::vector<PctvChannelGroup>     m_groups;  
-  std::vector<PctvRecording>        m_recordings; 
-  std::vector<PctvTimer>            m_timer;
-  std::vector<std::string>			m_partitions;
+  bool m_bIsConnected;
+  std::string m_strHostname;
+  std::string m_strBaseUrl;
+  std::string m_strBackendName;
+  std::string m_strBackendVersion;
+  PctvConfig m_config;
+  int m_iBitrate;
+  bool m_bTranscode;
+  bool m_bUsePIN;
+  int m_iPortWeb;
+  int m_iNumChannels;
+  int m_iNumRecordings;
+  int m_iNumGroups;
+  std::string m_strPreviewMode;
+  std::string m_strStid;
+  bool m_bUpdating;
+  std::string m_strBackendUrlNoAuth;
 
+  std::vector<PctvEpgChannel> m_epg;
+  std::vector<PctvChannel> m_channels;
+  std::vector<PctvChannelGroup> m_groups;
+  std::vector<PctvRecording> m_recordings;
+  std::vector<PctvTimer> m_timer;
+  std::vector<std::string> m_partitions;
 };
-
-
