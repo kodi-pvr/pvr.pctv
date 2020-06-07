@@ -55,3 +55,35 @@ msgstr ""
 msgctxt "#30100"
 msgid "General"
 msgstr ""
+
+msgctxt "#30101"
+msgid "400 Kbps"
+msgstr ""
+
+msgctxt "#30102"
+msgid "650 Kbps"
+msgstr ""
+
+msgctxt "#30103"
+msgid "900 Kbps"
+msgstr ""
+
+msgctxt "#30104"
+msgid "1200 Kbps"
+msgstr ""
+
+msgctxt "#30104"
+msgid "2200 Kbps"
+msgstr ""
+
+msgctxt "#30105"
+msgid "4200 Kbps"
+msgstr ""
+
+msgctxt "#30106"
+msgid "6500 Kbps"
+msgstr ""
+
+msgctxt "#30107"
+msgid "8500 Kbps"
+msgstr ""
