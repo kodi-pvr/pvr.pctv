@@ -14,14 +14,12 @@ set(DEPLIBS ${JSONCPP_LIBRARIES})
 set(PCTV_SOURCES src/addon.cpp
                  src/md5.cpp
                  src/PctvData.cpp
-                 src/rest.cpp
-                 src/utils.cpp)
+                 src/rest.cpp)
 
 set(PCTV_HEADERS src/addon.h
                  src/md5.h
                  src/PctvData.h
-                 src/rest.h
-                 src/utils.h)
+                 src/rest.h)
 
 # To prevent build exit on deprecated warnings (from JsonCpp)
 if(WIN32)
