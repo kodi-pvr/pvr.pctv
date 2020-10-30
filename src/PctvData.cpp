@@ -9,10 +9,12 @@
 #include "PctvData.h"
 
 #include "md5.h"
-#include "utils.h"
 
 #include <algorithm>
 #include <kodi/General.h>
+#include <kodi/tools/StringUtils.h>
+
+using kodi::tools::StringUtils;
 
 /************************************************************/
 /** Class interface */

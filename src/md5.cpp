@@ -8,7 +8,9 @@
 
 #include "md5.h"
 
-#include "utils.h"
+#include <kodi/tools/StringUtils.h>
+
+using kodi::tools::StringUtils;
 
 typedef unsigned char md5byte;
 

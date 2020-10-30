@@ -10,9 +10,11 @@
 #include "addon.h"
 
 #include "PctvData.h"
-#include "utils.h"
 
 #include <kodi/Filesystem.h>
+#include <kodi/tools/StringUtils.h>
+
+using kodi::tools::StringUtils;
 
 ADDON_STATUS CPCTVAddon::CreateInstance(int instanceType,
                                         const std::string& instanceID,
