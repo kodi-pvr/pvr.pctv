@@ -1,7 +1,7 @@
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/License-GPL%20v2+-blue.svg)](LICENSE.md)
-[![Build and run tests](https://github.com/kodi-pvr/pvr.pctv/actions/workflows/build.yml/badge.svg?branch=Matrix)](https://github.com/kodi-pvr/pvr.pctv/actions/workflows/build.yml)
-[![Build Status](https://dev.azure.com/teamkodi/kodi-pvr/_apis/build/status/kodi-pvr.pvr.pctv?branchName=Matrix)](https://dev.azure.com/teamkodi/kodi-pvr/_build/latest?definitionId=66&branchName=Matrix)
-[![Build Status](https://jenkins.kodi.tv/view/Addons/job/kodi-pvr/job/pvr.pctv/job/Matrix/badge/icon)](https://jenkins.kodi.tv/blue/organizations/jenkins/kodi-pvr%2Fpvr.pctv/branches/)
+[![Build and run tests](https://github.com/kodi-pvr/pvr.pctv/actions/workflows/build.yml/badge.svg?branch=Nexus)](https://github.com/kodi-pvr/pvr.pctv/actions/workflows/build.yml)
+[![Build Status](https://dev.azure.com/teamkodi/kodi-pvr/_apis/build/status/kodi-pvr.pvr.pctv?branchName=Nexus)](https://dev.azure.com/teamkodi/kodi-pvr/_build/latest?definitionId=66&branchName=Nexus)
+[![Build Status](https://jenkins.kodi.tv/view/Addons/job/kodi-pvr/job/pvr.pctv/job/Nexus/badge/icon)](https://jenkins.kodi.tv/blue/organizations/jenkins/kodi-pvr%2Fpvr.pctv/branches/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/5120/badge.svg)](https://scan.coverity.com/projects/5120)
 
 # PCTV PVR
