@@ -1,3 +1,7 @@
+v6.1.2
+- Translations updates from Weblate
+	- am_et, ar_sa, az_az, be_by, bs_ba, eo, et_ee, fa_af, fa_ir, fo_fo, hi_in, hy_am, mi, ml_in, mn_mn, my_mm, si_lk, sq_al, ta_in, te_in, tg_tj, th_th, uk_ua, uz_uz, vi_vn
+
 v6.1.1
 - Language update from Weblate
 
