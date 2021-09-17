@@ -16,6 +16,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+msgctxt "Addon Summary"
+msgid "PVR Client to connect PCTV Systems Broadway to Kodi"
+msgstr "PCTV Systems BroadwayをKodiに接続するためのPVRクライアント"
+
+msgctxt "Addon Description"
+msgid "PCTV Systems frontend. Supporting streaming of Live TV &amp; Recordings, EPG View, Timers."
+msgstr "PCTVシステム ソフトウェア。ストリーミングに関するTV視聴と録画、EPG表示、タイマーをサポート。"
+
+msgctxt "Addon Disclaimer"
+msgid "This is unstable software! The authors are in no way responsible for failed playings, incorrect EPG times, wasted hours, or any other undesirable effects."
+msgstr "これは不安定なソフトウェアです！本プログラムの作者は、再生の失敗、EPG 時刻のずれ、無駄にした時間、その他あらゆる好ましくない結果について責任を負わないものとします。"
+
 msgctxt "#30000"
 msgid "Hostname or IP address"
 msgstr "ホスト名かIPアドレス"
