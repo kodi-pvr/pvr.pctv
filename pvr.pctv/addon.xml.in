@@ -9,6 +9,13 @@
     point="kodi.pvrclient"
     library_@PLATFORM@="@LIBRARY_FILENAME@"/>
   <extension point="xbmc.addon.metadata">
+    <platform>@PLATFORM@</platform>
+    <license>GPL-2.0-or-later</license>
+    <source>https://github.com/kodi-pvr/pvr.pctv</source>
+    <forum>https://forum.kodi.tv/forumdisplay.php?fid=237</forum>
+    <assets>
+      <icon>icon.png</icon>
+    </assets>
     <summary lang="af_ZA">PVR kliënt om PCTV Systems Broadway aan Kodi te konnekteer</summary>
     <summary lang="bg_BG">Клиент за ПВР за свързване на Kodi с „PCTV Systems Broadway“</summary>
     <summary lang="ca_ES">Client PVR per connectar el sistema PCTV a Kodi</summary>
@@ -19,7 +26,7 @@
     <summary lang="en_GB">PVR Client to connect PCTV Systems Broadway to Kodi</summary>
     <summary lang="en_NZ">PVR Client to connect PCTV Systems Broadway to Kodi</summary>
     <summary lang="en_US">PVR Client to connect PCTV Systems Broadway to Kodi</summary>
-    <summary lang="es_AR">Cliente PVR para conectar a Kodi  PCTV Systems Broadway</summary>
+    <summary lang="es_AR">Cliente PVR para conectar a Kodi PCTV Systems Broadway</summary>
     <summary lang="es_ES">Cliente PVR para conectar el sistema PCTV a Kodi</summary>
     <summary lang="es_MX">Cliente PVR para conectar PCTV Systems Broadway a Kodi</summary>
     <summary lang="et_EE">PVR'i klient ühendamaks PCTV Systems Broadway Kodiga</summary>
@@ -82,13 +89,13 @@
     <description lang="lt_LT">PCTV Systems naudotojo sąsaja. Palaiko TV transliacijas ir įrašymą, EPG rodymą, laikmačius.</description>
     <description lang="lv_LV">PCTV sistēmu galasistēma. Atbalsta tiešraides TV straumēšanu &amp; ierakstus, EPG skatu, taimerus.</description>
     <description lang="ms_MY">Bahagian hadapan PCTV Systems. Menyokong penstriman TV Langsung &amp; Rakaman, Paparan EPG, Pemasa.</description>
-    <description lang="nb_NO">PCTV-grenseflate. Støtte for direkte-TV  &amp; Opptak, EPG, tidsur.</description>
+    <description lang="nb_NO">PCTV-grenseflate. Støtte for direkte-TV &amp; Opptak, EPG, tidsur.</description>
     <description lang="nl_NL">PCTV Systeem frontend. Ondersteunt het streamen van Live-TV &amp; opnames, EPG-overzicht, Timers.</description>
     <description lang="pl_PL">Klient telewizji dla systemu PCTV obsługuje transmisję kanałów telewizyjnych, nagrywanie i harmonogram nagrań oraz funkcje przewodnika telewizyjnego.</description>
     <description lang="pt_BR">Frontend para PCTV Systems. Suporta streaming de Tv ao Vivo &amp; Gravações, Visualização de EPG, Agendamentos.</description>
     <description lang="pt_PT">Interface para sistemas PCTV. Suporta transmissão e gravação de TV em direto, EPG e temporizadores.</description>
     <description lang="ro_RO">Partea din față pentru PCTV Systems. Suportă difuzarea în flux a televiziuniii în direct &amp; Înregistrări, EPG Vizualizare, Cronometre.</description>
-    <description lang="ru_RU">Фронт-энд для PCTV Systems. Поддерживает просмотр телепередач  , записей, просмотр телепрограммы, таймеров.</description>
+    <description lang="ru_RU">Фронт-энд для PCTV Systems. Поддерживает просмотр телепередач , записей, просмотр телепрограммы, таймеров.</description>
     <description lang="sk_SK">Rozhranie PCTV Systems. Podporuje streamovanie živého televízneho vysielania , nahrávanie, zobrazenie sprievodcu, časovače.</description>
     <description lang="sl_SI">Vmesnik za PCTV Systems. Podpira pretakanje žive televizije in posnetkov, pogled el. programskega vodnika in časovnike.</description>
     <description lang="sr_RS">PCTV Systems интерфејс. Подржава стримовање ТВ Уживо &amp; Снимака, преглед EPG-а, Тајмере.</description>
@@ -115,7 +122,7 @@
     <disclaimer lang="es_MX">¡Este es un software inestable! Los autores no son responsables en absoluto de reproducciones fallidas, tiempos EPG incorrectos, desperdicio de horas, o cualquier otro efecto indeseable.</disclaimer>
     <disclaimer lang="eu_ES">Software hau ezegonkorra da! Egileak ez dira inolaz ere erantzule editen erreprodukzio akatsez, EPG denbora okerrez, ordu galduez edo beste edozein ondorio ezerosotaz.</disclaimer>
     <disclaimer lang="fi_FI">Tämä on epävakaa ohjelma! Sen tekijät eivät ole millään muotoa vastuussa epäonnistuneista tallennuksista, virheellisistä ajastuksista, haaskatusta ajasta, verenpaineen noususta tai mistään muusta epäsuotuisasta vaikutuksesta.</disclaimer>
-    <disclaimer lang="fr_CA">Ce logiciel est instable ! Les auteurs ne sont aucunement responsables des lectures  défaillantes, d’horaires erronés du GÉP, des heures perdues ou tout autre effet indésirable.</disclaimer>
+    <disclaimer lang="fr_CA">Ce logiciel est instable ! Les auteurs ne sont aucunement responsables des lectures défaillantes, d’horaires erronés du GÉP, des heures perdues ou tout autre effet indésirable.</disclaimer>
     <disclaimer lang="fr_FR">Logiciel en cours d'élaboration ! Les auteurs ne sont en aucun cas responsables de l'échec des enregistrements, programmations défectueuses, temps perdu ou autres effets indésirables.</disclaimer>
     <disclaimer lang="gl_ES">Este software non é estábel! Os autores non se fan responsábeis dos erros na reproducción, horarios incorrectos na Guía, horas vencidas, e otros efectos non desexados.</disclaimer>
     <disclaimer lang="he_IL">זוהי איננה הרחבה יציבה! המפתחים אינם אחראים על כשלון בניגון, זמנים שגויים במדריך השידורים, שעות מבוזבזות או כל תופעה לא רצויה אחרת.</disclaimer>
@@ -130,7 +137,7 @@
     <disclaimer lang="lv_LV">Šī ir nestabila programmatūra! Autori nav atbildīgi par neizdevušos atskaņošanu, nepareizu EPG laiku, iztērētām stundām vai jebkādiem citiem nevēlamiem efektiem.</disclaimer>
     <disclaimer lang="mk_MK">Ова е нестабилен софтвер! Авторите во никој случај не се одговорни за неуспешно гледање, неточни времиња во EPG, вашето потрошено време или било кои непосакувани ефекти.</disclaimer>
     <disclaimer lang="ms_MY">Perisian ini tidak stabi! Pengarang tidak bertanggungjawab atas kegagalan memainkan, pemasa EPG yang tidak betul, pembaziran masa atau sebarang kesan tidak diingini.</disclaimer>
-    <disclaimer lang="mt_MT">Dan il-programm mhuwiex stabbli!  L-awturi m'huma bl-ebda mod responsabbli għal daqq li ma jirnexxiex, ħinijiet tal-EPG żbaljati, siegħat moħlija jew kwalunkwe effet ieħor mhux mixtieq.</disclaimer>
+    <disclaimer lang="mt_MT">Dan il-programm mhuwiex stabbli! L-awturi m'huma bl-ebda mod responsabbli għal daqq li ma jirnexxiex, ħinijiet tal-EPG żbaljati, siegħat moħlija jew kwalunkwe effet ieħor mhux mixtieq.</disclaimer>
     <disclaimer lang="nb_NO">Dette er et ustabilt program! Skaperne er på ingen måte ansvarlig for feil ved avspilling, feil programguidetider, bortkastede timer eller andre uønskede ting.</disclaimer>
     <disclaimer lang="nl_NL">Dit is instabiele software! De makers zijn op geen enkele wijze verantwoordelijk voor foutieve opnames, incorrecte EPG-tijden, verloren uren of welke andere ongewenste bijverschijnselen dan ook.</disclaimer>
     <disclaimer lang="pl_PL">Oprogramowanie nadal jest w fazie rozwoju i jest niestabilne! Autorzy w żaden sposób nie są odpowiedzialni za nieudane nagrania, błędy w harmonogramie nagrań, zmarnowany czas ani jakiekolwiek inne niepożądane efekty.</disclaimer>
@@ -147,12 +154,5 @@
     <disclaimer lang="tr_TR">Bu kararsız bir yazılımdır! Yazanlar oynatma hatası, yanlış EPG zamanları, harcanmış saatler ya da diğer etkilerden sorumlu değiller.</disclaimer>
     <disclaimer lang="zh_CN">这是不稳定版的软件！作者不对录像失败、错误定时造成时间浪费或其它不良影响负责。</disclaimer>
     <disclaimer lang="zh_TW">這是測試中的軟體！原創作者無法針對以下情況負責：包括播放失敗，不正確的電子節目表，多餘的時數，或任何不可預期的不良影響。</disclaimer>
-    <platform>@PLATFORM@</platform>
-    <license>GPL-2.0-or-later</license>
-    <source>https://github.com/kodi-pvr/pvr.pctv</source>
-    <forum>https://forum.kodi.tv/forumdisplay.php?fid=237</forum>
-    <assets>
-      <icon>icon.png</icon>
-    </assets>
   </extension>
 </addon>
