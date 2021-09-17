@@ -3,7 +3,7 @@ Upstream-Name: pvr.pctv
 Source: https://github.com/kodi-pvr/pvr.pvtv
 
 Files: *
-Copyright: 2020 Team Kodi
+Copyright: 2020-2021 Team Kodi
            2015 hg1 <gerlach.holger@gmail.com>
 License: GPL-2+
 This package is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
 
 
 Files: debian/*
-Copyright: 2020 Team Kodi
+Copyright: 2020-2021 Team Kodi
            2015 hg1 <gerlach.holger@gmail.com>
 License: GPL-2+
 This package is free software; you can redistribute it and/or modify
