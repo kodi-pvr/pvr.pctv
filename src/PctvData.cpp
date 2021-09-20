@@ -935,6 +935,7 @@ PVR_ERROR Pctv::GetCapabilities(kodi::addon::PVRCapabilities& capabilities)
   capabilities.SetSupportsRadio(false);
   capabilities.SetSupportsChannelGroups(true);
   capabilities.SetSupportsRecordings(true);
+  capabilities.SetSupportsRecordingsDelete(false);
   capabilities.SetSupportsRecordingsUndelete(false);
   capabilities.SetSupportsTimers(true);
   capabilities.SetSupportsChannelScan(false);
