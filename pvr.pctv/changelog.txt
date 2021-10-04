@@ -1,3 +1,6 @@
+v20.1.0
+￼- Kodi PVR API to 8.0.0
+
 v20.0.0
 - Translations updates from Weblate
   - Korean (ko_kr), Russian (ru_ru), Polish (pl_pl) and Danish (da_dk)
