@@ -1,3 +1,7 @@
+v19.0.1
+- Translations updates from Weblate
+	- da_dk, es_mx, ko_kr, pl_pl, ru_ru
+
 v19.0.0
 - Translations updates from Weblate
   - Korean (ko_kr), Russian (ru_ru), Polish (pl_pl) and Danish (da_dk)
