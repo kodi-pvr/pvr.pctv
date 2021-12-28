@@ -21,7 +21,7 @@ msgid "PVR Client to connect PCTV Systems Broadway to Kodi"
 msgstr "Client enregistreur vidéo pour connecter le Broadway de PCTV Systems à Kodi"
 
 msgctxt "Addon Description"
-msgid "PCTV Systems frontend. Supporting streaming of Live TV &amp; Recordings, EPG View, Timers."
+msgid "PCTV Systems frontend. Supporting streaming of Live TV & Recordings, EPG View, Timers."
 msgstr "Interface logicielle de PCTV Systems. Prend en charge la diffusion de la TV en direct et des enregistrements, la vue du guide électronique des programmes TV et les programmations."
 
 msgctxt "Addon Disclaimer"
