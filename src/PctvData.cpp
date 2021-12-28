@@ -24,9 +24,8 @@ Pctv::Pctv(const std::string strHostname,
            int iBitrate,
            bool bTranscode,
            bool bUsePIN,
-           KODI_HANDLE instance,
-           const std::string& kodiVersion)
-  : kodi::addon::CInstancePVRClient(instance, kodiVersion),
+           const kodi::addon::IInstanceInfo& instance)
+  : kodi::addon::CInstancePVRClient(instance),
     m_strHostname(strHostname),
     m_iPortWeb(iPortWeb),
     m_strPin(strPin),
