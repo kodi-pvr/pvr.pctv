@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Main\n"
-"Report-Msgid-Bugs-To: translations@kodi.tv\n"
+"Report-Msgid-Bugs-To: https://github.com/xbmc/xbmc/issues/\n"
 "POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "PO-Revision-Date: 2021-07-28 22:29+0000\n"
 "Last-Translator: Marek Adamski <fevbew@wp.pl>\n"
@@ -22,7 +22,7 @@ msgid "PVR Client to connect PCTV Systems Broadway to Kodi"
 msgstr "Klient telewizji dla systemu PCTV Systems Broadway"
 
 msgctxt "Addon Description"
-msgid "PCTV Systems frontend. Supporting streaming of Live TV &amp; Recordings, EPG View, Timers."
+msgid "PCTV Systems frontend. Supporting streaming of Live TV & Recordings, EPG View, Timers."
 msgstr "Klient telewizji dla systemu PCTV obsługuje transmisję kanałów telewizyjnych, nagrywanie i harmonogram nagrań oraz funkcje przewodnika telewizyjnego."
 
 msgctxt "Addon Disclaimer"

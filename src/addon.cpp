@@ -15,32 +15,29 @@
 
 using kodi::tools::StringUtils;
 
-ADDON_STATUS CPCTVAddon::CreateInstance(int instanceType,
-                                        const std::string& instanceID,
-                                        KODI_HANDLE instance,
-                                        const std::string& version,
-                                        KODI_HANDLE& addonInstance)
+ADDON_STATUS CPCTVAddon::CreateInstance(const kodi::addon::IInstanceInfo& instance,
+                                        KODI_ADDON_INSTANCE_HDL& hdl)
 {
-  if (instanceType == ADDON_INSTANCE_PVR)
+  if (instance.IsType(ADDON_INSTANCE_PVR))
   {
     kodi::Log(ADDON_LOG_DEBUG, "%s - Creating PCTV Systems PVR-Client", __func__);
 
-    if (!kodi::vfs::DirectoryExists(kodi::GetBaseUserPath()))
+    if (!kodi::vfs::DirectoryExists(kodi::addon::GetUserPath()))
     {
-      kodi::vfs::CreateDirectory(kodi::GetBaseUserPath());
+      kodi::vfs::CreateDirectory(kodi::addon::GetUserPath());
     }
 
-    m_strHostname = kodi::GetSettingString("host", DEFAULT_HOST);
-    m_iPortWeb = kodi::GetSettingInt("webport", DEFAULT_WEB_PORT);
-    m_bUsePIN = kodi::GetSettingBoolean("usepin", DEFAULT_USEPIN);
-    m_strPin = StringUtils::Format("%04i", kodi::GetSettingInt("pin", 0));
-    m_bTranscode = kodi::GetSettingBoolean("transcode", DEFAULT_TRANSCODE);
-    m_iBitrate = kodi::GetSettingInt("bitrate", DEFAULT_BITRATE);
+    m_strHostname = kodi::addon::GetSettingString("host", DEFAULT_HOST);
+    m_iPortWeb = kodi::addon::GetSettingInt("webport", DEFAULT_WEB_PORT);
+    m_bUsePIN = kodi::addon::GetSettingBoolean("usepin", DEFAULT_USEPIN);
+    m_strPin = StringUtils::Format("%04i", kodi::addon::GetSettingInt("pin", 0));
+    m_bTranscode = kodi::addon::GetSettingBoolean("transcode", DEFAULT_TRANSCODE);
+    m_iBitrate = kodi::addon::GetSettingInt("bitrate", DEFAULT_BITRATE);
 
     Pctv* usedInstance = new Pctv(m_strHostname, m_iPortWeb, m_strPin, m_iBitrate, m_bTranscode,
-                                  m_bUsePIN, instance, version);
-    addonInstance = usedInstance;
-    m_usedInstances.emplace(instanceID, usedInstance);
+                                  m_bUsePIN, instance);
+    hdl = usedInstance;
+    m_usedInstances.emplace(instance.GetID(), usedInstance);
 
     if (!usedInstance->Open())
       return ADDON_STATUS_LOST_CONNECTION;
@@ -51,15 +48,14 @@ ADDON_STATUS CPCTVAddon::CreateInstance(int instanceType,
   return ADDON_STATUS_UNKNOWN;
 }
 
-void CPCTVAddon::DestroyInstance(int instanceType,
-                                 const std::string& instanceID,
-                                 KODI_HANDLE addonInstance)
+void CPCTVAddon::DestroyInstance(const kodi::addon::IInstanceInfo& instance,
+                                 const KODI_ADDON_INSTANCE_HDL hdl)
 {
-  if (instanceType == ADDON_INSTANCE_PVR)
+  if (instance.IsType(ADDON_INSTANCE_PVR))
   {
     kodi::Log(ADDON_LOG_DEBUG, "%s: Destoying octonet pvr instance", __func__);
 
-    const auto& it = m_usedInstances.find(instanceID);
+    const auto& it = m_usedInstances.find(instance.GetID());
     if (it != m_usedInstances.end())
     {
       m_usedInstances.erase(it);
@@ -68,7 +64,7 @@ void CPCTVAddon::DestroyInstance(int instanceType,
 }
 
 ADDON_STATUS CPCTVAddon::SetSetting(const std::string& settingName,
-                                    const kodi::CSettingValue& settingValue)
+                                    const kodi::addon::CSettingValue& settingValue)
 {
   if (settingName == "host")
   {

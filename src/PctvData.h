@@ -151,7 +151,7 @@ struct PctvConfig
   }
 };
 
-class ATTRIBUTE_HIDDEN Pctv : public kodi::addon::CInstancePVRClient
+class ATTR_DLL_LOCAL Pctv : public kodi::addon::CInstancePVRClient
 {
 public:
   /* Class interface */
@@ -161,8 +161,7 @@ public:
        int iBitrate,
        bool bTranscode,
        bool bUsePIN,
-       KODI_HANDLE instance,
-       const std::string& kodiVersion);
+       const kodi::addon::IInstanceInfo& instance);
   ~Pctv();
 
   /* Server */
