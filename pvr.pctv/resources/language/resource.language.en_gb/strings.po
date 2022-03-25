@@ -110,10 +110,34 @@ msgstr ""
 
 #empty strings from id 30108 to 30600
 
+msgctxt "#30601"
+msgid "The host name or IP address used to connect to the device."
+msgstr ""
+
+msgctxt "#30602"
+msgid "The port used to connect to the device."
+msgstr ""
+
+msgctxt "#30603"
+msgid "If enabled a PIN will be used when connecting to the device."
+msgstr ""
+
+msgctxt "#30604"
+msgid "The PIN used when connecting to the device."
+msgstr ""
+
 msgctxt "#30605"
 msgid "Always use MPEG TS as the default MIME Type. Useful for some tuners when the type of stream can't easily be determined."
 msgstr ""
 
 msgctxt "#30606"
 msgid "Use this MIME Type as the default for all streams. Leave blank if Kodi should determine the stream type itself."
+msgstr ""
+
+msgctxt "#30607"
+msgid "If enabled the stream will be transcoded."
+msgstr ""
+
+msgctxt "#30608"
+msgid "The bitrate to use for transcoding."
 msgstr ""
