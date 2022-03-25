@@ -34,6 +34,22 @@
           </dependencies>
           <control type="edit" format="integer" />
         </setting>
+        <setting id="usempegts" type="boolean" label="30003" help="30605">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="mimetype" type="string" parent="usempegts" label="30004" help="30606">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="usempegts">false</dependency>
+          </dependencies>
+          <control type="edit" format="string" />
+        </setting>
       </group>
       <group id="1" label="-1">
         <setting id="transcode" type="boolean" label="30020">

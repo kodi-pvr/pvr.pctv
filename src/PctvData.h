@@ -158,6 +158,7 @@ public:
   Pctv(const std::string strHostname,
        int iPortWeb,
        const std::string& strPin,
+       const std::string& strMimeType,
        int iBitrate,
        bool bTranscode,
        bool bUsePIN,
@@ -259,6 +260,7 @@ private:
   std::string m_strHostname;
   int m_iPortWeb;
   std::string m_strPin;
+  std::string m_strMimeType;
   int m_iBitrate;
   bool m_bTranscode;
   bool m_bUsePIN;
