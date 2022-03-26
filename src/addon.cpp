@@ -31,11 +31,17 @@ ADDON_STATUS CPCTVAddon::CreateInstance(const kodi::addon::IInstanceInfo& instan
     m_iPortWeb = kodi::addon::GetSettingInt("webport", DEFAULT_WEB_PORT);
     m_bUsePIN = kodi::addon::GetSettingBoolean("usepin", DEFAULT_USEPIN);
     m_strPin = StringUtils::Format("%04i", kodi::addon::GetSettingInt("pin", 0));
+    m_strMimeType.clear();
+    m_bUseMpegTSMimeType = kodi::addon::GetSettingBoolean("usempegts", DEFAULT_USE_MPEGTS);
+    if (m_bUseMpegTSMimeType)
+      m_strMimeType = MPEGTS_MIMETYPE;
+    else
+      m_strMimeType = kodi::addon::GetSettingString("mimetype", "");
     m_bTranscode = kodi::addon::GetSettingBoolean("transcode", DEFAULT_TRANSCODE);
     m_iBitrate = kodi::addon::GetSettingInt("bitrate", DEFAULT_BITRATE);
 
-    Pctv* usedInstance = new Pctv(m_strHostname, m_iPortWeb, m_strPin, m_iBitrate, m_bTranscode,
-                                  m_bUsePIN, instance);
+    Pctv* usedInstance = new Pctv(m_strHostname, m_iPortWeb, m_strPin, m_strMimeType,
+                                  m_iBitrate, m_bTranscode, m_bUsePIN, instance);
     hdl = usedInstance;
     m_usedInstances.emplace(instance.GetID(), usedInstance);
 

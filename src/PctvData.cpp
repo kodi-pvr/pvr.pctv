@@ -21,6 +21,7 @@ using kodi::tools::StringUtils;
 Pctv::Pctv(const std::string strHostname,
            int iPortWeb,
            const std::string& strPin,
+           const std::string& strMimeType,
            int iBitrate,
            bool bTranscode,
            bool bUsePIN,
@@ -29,6 +30,7 @@ Pctv::Pctv(const std::string strHostname,
     m_strHostname(strHostname),
     m_iPortWeb(iPortWeb),
     m_strPin(strPin),
+    m_strMimeType(strMimeType),
     m_iBitrate(iBitrate),
     m_bTranscode(bTranscode),
     m_bUsePIN(bUsePIN)
@@ -246,6 +248,8 @@ PVR_ERROR Pctv::GetChannelStreamProperties(const kodi::addon::PVRChannel& channe
 
   properties.emplace_back(PVR_STREAM_PROPERTY_STREAMURL, strUrl);
   properties.emplace_back(PVR_STREAM_PROPERTY_ISREALTIMESTREAM, "true");
+  if (!m_strMimeType.empty())
+    properties.emplace_back(PVR_STREAM_PROPERTY_MIMETYPE, m_strMimeType);
 
   return PVR_ERROR_NO_ERROR;
 }

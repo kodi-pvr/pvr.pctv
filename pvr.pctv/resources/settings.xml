@@ -3,12 +3,12 @@
   <section id="pvr.pctv">
     <category id="general" label="30100" help="-1">
       <group id="1" label="-1">
-        <setting id="host" type="string" label="30000">
+        <setting id="host" type="string" label="30000" help="30601">
           <level>0</level>
           <default>192.168.1.20</default>
           <control type="edit" format="string" />
         </setting>
-        <setting id="webport" type="integer" label="30001">
+        <setting id="webport" type="integer" label="30001" help="30602">
           <level>0</level>
           <default>80</default>
           <constraints>
@@ -18,12 +18,12 @@
           </constraints>
           <control type="edit" format="integer" />
         </setting>
-        <setting id="usepin" type="boolean" label="30021">
+        <setting id="usepin" type="boolean" label="30021" help="30603">
           <level>0</level>
           <default>false</default>
           <control type="toggle" />
         </setting>
-        <setting id="pin" type="integer" label="30002">
+        <setting id="pin" type="integer" parent="usepin" label="30002" help="30604">
           <level>0</level>
           <default>0000</default>
           <constraints>
@@ -34,14 +34,30 @@
           </dependencies>
           <control type="edit" format="integer" />
         </setting>
-      </group>
-      <group id="1" label="-1">
-        <setting id="transcode" type="boolean" label="30020">
+        <setting id="usempegts" type="boolean" label="30003" help="30605">
           <level>0</level>
           <default>false</default>
           <control type="toggle" />
         </setting>
-        <setting id="bitrate" type="integer" label="30030">
+        <setting id="mimetype" type="string" parent="usempegts" label="30004" help="30606">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="usempegts">false</dependency>
+          </dependencies>
+          <control type="edit" format="string" />
+        </setting>
+      </group>
+      <group id="1" label="-1">
+        <setting id="transcode" type="boolean" label="30020" help="30607">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="bitrate" type="integer" parent="transcode" label="30030" help="30608">
           <level>0</level>
           <default>1200</default>
           <constraints>
