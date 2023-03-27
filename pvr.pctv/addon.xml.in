@@ -30,7 +30,7 @@
     <summary lang="es_ES">Cliente PVR para conectar sistemas PCTV Broadway a Kodi</summary>
     <summary lang="es_MX">Cliente PVR para conectar PCTV Systems Broadway a Kodi</summary>
     <summary lang="et_EE">PVR&apos;i klient ühendamaks PCTV Systems Broadway Kodiga</summary>
-    <summary lang="fi_FI">Kodin PCTV Systems Broadway -asiakasohjelma</summary>
+    <summary lang="fi_FI">PCTV Systems Broadway PVR-pääte Kodille.</summary>
     <summary lang="fr_CA">Client de numériscope pour connecter Broadway de PCTV Systems à Kodi</summary>
     <summary lang="fr_FR">Client enregistreur vidéo pour connecter PCTV Systems Broadway à Kodi</summary>
     <summary lang="gl_ES">Cliente PVR para conectar os sistemas de transmisión PCTV ao Kodi</summary>
@@ -121,7 +121,7 @@
     <disclaimer lang="es_ES">Este es un software inestable. El autor no se hace responsable por reproducciones fallidas, datos de EPG incorrectos, horas perdidas o cualquier otro efecto indeseable.</disclaimer>
     <disclaimer lang="es_MX">¡Este es un software inestable! Los autores no son responsables en absoluto de reproducciones fallidas, tiempos EPG incorrectos, desperdicio de horas, o cualquier otro efecto indeseable.</disclaimer>
     <disclaimer lang="eu_ES">Software hau ezegonkorra da! Egileak ez dira inolaz ere erantzule editen erreprodukzio akatsez, EPG denbora okerrez, ordu galduez edo beste edozein ondorio ezerosotaz.</disclaimer>
-    <disclaimer lang="fi_FI">Tämä on epävakaa ohjelma! Sen tekijät eivät ole millään muotoa vastuussa epäonnistuneista tallennuksista, virheellisistä ajastuksista, haaskatusta ajasta, verenpaineen noususta tai mistään muusta epäsuotuisasta vaikutuksesta.</disclaimer>
+    <disclaimer lang="fi_FI">Tämä on epävakaa ohjelmisto! Sen kehittäjät eivät ole millään tavalla vastuussa toisto-ongelmista, virheellisistä ohjelmaoppaan ajoituksista, hukatusta ajasta tai mistään muista ei toivotuista vaikutuksista.</disclaimer>
     <disclaimer lang="fr_CA">Ce logiciel est instable ! Les auteurs ne sont aucunement responsables des lectures défaillantes, d’horaires erronés du GÉP, des heures perdues ou tout autre effet indésirable.</disclaimer>
     <disclaimer lang="fr_FR">Logiciel en cours d&apos;élaboration ! Les auteurs ne sont en aucun cas responsables de l&apos;échec des enregistrements, programmations défectueuses, temps perdu ou autres effets indésirables.</disclaimer>
     <disclaimer lang="gl_ES">Este software non é estábel! Os autores non se fan responsábeis dos erros na reproducción, horarios incorrectos na Guía, horas vencidas, e otros efectos non desexados.</disclaimer>
